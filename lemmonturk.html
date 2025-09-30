@@ -1,539 +1,1427 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🍋 LemmOn Mersin - Şehir Rehberi</title>
-  <meta name="description" content="Mersin'in en modern şehir rehberi">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>LemmOn Mersin</title>
+  <meta name="theme-color" content="#000000"/>
+  <meta name="description" content="Mersin'in en iyi mekanlarını keşfet"/>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  
   <style>
-    :root{
-      --gradient-primary: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      --gradient-secondary: linear-gradient(135deg,#f093fb 0%,#f5576c 100%);
-      --gradient-success: linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);
-      --gradient-warning: linear-gradient(135deg,#43e97b 0%,#38f9d7 100%);
-      --color-accent:#ffd700;
-      --bg-primary: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      --bg-secondary: linear-gradient(135deg,#2d1b69 0%,#11998e 100%);
-      --bg-card: rgba(255,255,255,.1);
-      --bg-glass: rgba(255,255,255,.2);
-      --text-primary:#fff;
-      --text-secondary:rgba(255,255,255,.8);
-      --text-muted:rgba(255,255,255,.6);
-      --border-glass: rgba(255,255,255,.18);
-      --shadow-soft: 0 8px 32px rgba(31,38,135,.37);
-      --shadow-heavy: 0 20px 40px rgba(0,0,0,.3);
-      --radius:20px;
-      --transition: all .4s cubic-bezier(.4,0,.2,1);
-    }
-    [data-theme="light"]{
-      --bg-primary: linear-gradient(135deg,#74b9ff 0%,#0984e3 100%);
-      --bg-secondary: linear-gradient(135deg,#fdcb6e 0%,#e17055 100%);
-      --bg-card: rgba(255,255,255,.9);
-      --bg-glass: rgba(255,255,255,.7);
-      --text-primary:#2d3436;
-      --text-secondary:#636e72;
-      --text-muted:#b2bec3;
-      --border-glass: rgba(0,0,0,.1);
-    }
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg-primary);color:var(--text-primary);overflow-x:hidden;min-height:100vh;-webkit-font-smoothing:antialiased}
-    .app{max-width:450px;margin:0 auto;min-height:100vh;position:relative}
-    .app::before{content:'';position:fixed;inset:0;background:var(--bg-secondary);opacity:.1;z-index:-1;animation:pulse 8s ease-in-out infinite}
-    @keyframes pulse{0%,100%{opacity:.1}50%{opacity:.3}}
-    .header{position:sticky;top:0;z-index:1000;backdrop-filter:blur(20px);background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:0 0 var(--radius) var(--radius);margin:0 10px;padding:1.5rem;box-shadow:var(--shadow-soft)}
-    .header-content{display:flex;align-items:center;justify-content:space-between}
-    .brand{display:flex;align-items:center;gap:1rem;cursor:pointer;transition:var(--transition);position:relative}
-    .brand:hover{transform:scale(1.05)}
-    .brand:active{transform:scale(0.98)}
-    .logo{width:50px;height:50px;background:var(--gradient-secondary);border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;box-shadow:var(--shadow-heavy);position:relative}
-    .logo::after{content:'✨';position:absolute;top:-5px;right:-5px;font-size:1rem;animation:sparkle 2s infinite}
-    @keyframes sparkle{0%,100%{transform:rotate(0) scale(1);opacity:1}50%{transform:rotate(180deg) scale(1.2);opacity:.7}}
-    .brand-text{display:flex;flex-direction:column}
-    .app-title{font-size:1.4rem;font-weight:800;background:var(--gradient-warning);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .app-subtitle{font-size:.8rem;color:var(--text-muted);font-weight:500}
-    .header-actions{display:flex;gap:.5rem;align-items:center}
-    .btn{border:none;border-radius:15px;padding:.8rem 1.2rem;font-weight:600;cursor:pointer;transition:var(--transition);backdrop-filter:blur(10px);border:1px solid var(--border-glass);background:var(--bg-card);color:var(--text-primary);font-size:.9rem;position:relative;overflow:hidden;min-height:48px;touch-action:manipulation}
-    .btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);transition:var(--transition)}
-    .btn:hover::before{left:100%}
-    .btn:hover{transform:translateY(-3px);box-shadow:var(--shadow-heavy);border-color:var(--color-accent)}
-    .btn:active{transform:translateY(0) scale(.98)}
-    .btn-primary{background:var(--gradient-primary);border:none;color:#fff}
-    .btn-secondary{background:var(--gradient-secondary);border:none;color:#fff}
-    .btn-success{background:var(--gradient-success);border:none;color:#fff}
-    .btn-warning{background:var(--gradient-warning);border:none;color:#fff}
-    .btn-icon{width:48px;height:48px;padding:0;border-radius:50%;font-size:1.2rem}
-    .btn-circle{border-radius:50%;width:50px;height:50px;padding:0;display:flex;align-items:center;justify-content:center}
-    .search-section{margin:20px 10px;background:var(--bg-glass);backdrop-filter:blur(20px);border:1px solid var(--border-glass);border-radius:var(--radius);padding:2rem;box-shadow:var(--shadow-soft)}
-    .search-header{text-align:center;margin-bottom:2rem}
-    .search-title{font-size:1.5rem;font-weight:700;margin-bottom:.5rem;background:var(--gradient-success);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .search-subtitle{color:var(--text-secondary);font-size:.9rem}
-    .search-form{display:grid;gap:1.5rem}
-    .search-row{display:grid;grid-template-columns:1fr auto auto;gap:1rem;align-items:center}
-    .form-control{width:100%;padding:1.2rem;border:2px solid transparent;border-radius:15px;background:var(--bg-card);backdrop-filter:blur(10px);color:var(--text-primary);font-size:1rem;transition:var(--transition);font-weight:500;min-height:48px;touch-action:manipulation}
-    .form-control:focus{outline:none;border-color:var(--color-accent);transform:scale(1.02);box-shadow:0 0 20px rgba(255,215,0,.3)}
-    .form-control::placeholder{color:var(--text-muted)}
-    .results-header{display:flex;justify-content:space-between;align-items:center;padding:0 20px;margin:20px 0}
-    .results-count{background:var(--gradient-warning);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700;font-size:1.1rem}
-    .places-grid{padding:0 10px 100px;display:grid;gap:20px}
-    .place-card{background:var(--bg-glass);backdrop-filter:blur(20px);border:1px solid var(--border-glass);border-radius:var(--radius);padding:2rem;box-shadow:var(--shadow-soft);cursor:pointer;transition:var(--transition);position:relative;overflow:hidden;touch-action:manipulation}
-    .place-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:4px;background:var(--gradient-secondary);transform:scaleX(0);transition:var(--transition)}
-    .place-card:hover{transform:translateY(-10px);box-shadow:var(--shadow-heavy);border-color:var(--color-accent)}
-    .place-card:hover::before{transform:scaleX(1)}
-    .place-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem}
-    .place-info{flex:1}
-    .place-title{font-size:1.3rem;font-weight:700;margin-bottom:.5rem;color:var(--text-primary)}
-    .place-category{display:inline-block;padding:.3rem .8rem;background:var(--gradient-primary);color:#fff;border-radius:20px;font-size:.8rem;font-weight:600;margin-bottom:.5rem}
-    .place-district{color:var(--text-secondary);font-size:.9rem;display:flex;align-items:center;gap:.5rem}
-    .favorite-btn{background:none;border:none;font-size:2rem;cursor:pointer;transition:var(--transition);color:var(--text-muted);min-height:48px;min-width:48px;touch-action:manipulation}
-    .favorite-btn:hover{transform:scale(1.2) rotate(10deg)}
-    .favorite-btn.active{color:var(--color-accent);filter:drop-shadow(0 0 10px rgba(255,215,0,.7))}
-    .place-meta{display:flex;flex-wrap:wrap;gap:1rem;margin:1rem 0}
-    .status-badge{display:flex;align-items:center;gap:.5rem;padding:.4rem .8rem;border-radius:20px;font-size:.85rem;font-weight:600}
-    .status-open{background:rgba(16,185,129,.2);color:#00f2fe}
-    .status-closed{background:rgba(239,68,68,.2);color:#ff6b6b}
-    .place-actions{display:flex;gap:.8rem;margin-top:1.5rem}
-    .action-btn{flex:1;padding:.8rem;border-radius:12px;font-size:.9rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:.5rem;min-height:48px;touch-action:manipulation}
-    .action-call{background:var(--gradient-success);color:#fff;border:none}
-    .action-route{background:var(--gradient-warning);color:#fff;border:none}
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px;opacity:0;transition:var(--transition)}
-    .modal.show{display:flex;opacity:1}
-    .modal-content{background:var(--bg-glass);backdrop-filter:blur(30px);border:1px solid var(--border-glass);border-radius:var(--radius);width:min(95vw,500px);max-height:85vh;overflow:hidden;box-shadow:var(--shadow-heavy);transform:translateY(50px) scale(.9);transition:var(--transition)}
-    .modal.show .modal-content{transform:translateY(0) scale(1)}
-    .modal-header{padding:2rem;background:var(--gradient-primary);color:#fff;display:flex;justify-content:space-between;align-items:center}
-    .modal-title{font-size:1.4rem;font-weight:700;display:flex;align-items:center;gap:.5rem}
-    .modal-body{padding:2rem;max-height:60vh;overflow-y:auto}
-    .admin-section{margin-bottom:2rem}
-    .admin-title{font-size:1.1rem;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
-    .form-grid{display:grid;gap:1.5rem}
-    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-    .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--bg-glass);backdrop-filter:blur(20px);color:var(--text-primary);padding:1rem 2rem;border-radius:50px;border:1px solid var(--border-glass);box-shadow:var(--shadow-heavy);z-index:3000;opacity:0;transition:var(--transition);font-weight:600;display:flex;align-items:center;gap:.5rem;max-width:90vw}
-    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-    .toast-success{border-left:4px solid #00f2fe}
-    .toast-error{border-left:4px solid #ff6b6b}
-    .toast-warning{border-left:4px solid var(--color-accent)}
-    .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center}
-    .loading-icon{font-size:4rem;margin-bottom:1rem;animation:bounce 2s infinite}
-    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
-    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center}
-    .empty-icon{font-size:5rem;margin-bottom:2rem;opacity:.5}
-    .empty-title{font-size:1.5rem;font-weight:700;margin-bottom:1rem;color:var(--text-primary)}
-    .empty-text{color:var(--text-secondary);margin-bottom:2rem;max-width:300px}
-    .menu-item{display:flex;align-items:center;gap:1rem;padding:1.5rem;cursor:pointer;transition:var(--transition);border-radius:var(--radius);margin-bottom:1rem}
-    .menu-item:hover{background:var(--bg-card);transform:translateX(10px)}
-    .menu-item i{font-size:1.5rem;width:40px;text-align:center}
-    .tap-counter{position:absolute;top:-10px;right:-10px;background:var(--gradient-warning);color:#000;border-radius:50%;width:20px;height:20px;display:none;align-items:center;justify-content:center;font-size:.7rem;font-weight:700}
-    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
-    .error-input{border-color:#ff6b6b !important;background:rgba(255,107,107,.1) !important}
-    .success-input{border-color:#00f2fe !important;background:rgba(0,242,254,.1) !important}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     
-    /* 💬 Chat Sistemi CSS */
-    .chat-container{background:var(--bg-card);border-radius:var(--radius);padding:1rem;margin:1rem 0;max-height:400px;display:flex;flex-direction:column}
-    .chat-messages{flex:1;max-height:300px;overflow-y:auto;margin-bottom:1rem;padding:.5rem}
-    .message{margin-bottom:1rem;display:flex;flex-direction:column}
-    .message.user{align-items:flex-end}
-    .message.admin{align-items:flex-start}
-    .message-bubble{max-width:80%;padding:.8rem 1.2rem;border-radius:18px;word-wrap:break-word}
-    .message.user .message-bubble{background:var(--gradient-primary);color:#fff}
-    .message.admin .message-bubble{background:var(--gradient-success);color:#fff}
-    .message-time{font-size:.7rem;color:var(--text-muted);margin-top:.3rem}
-    .message-input-container{display:flex;gap:.5rem;align-items:center}
-    .message-input{flex:1;padding:.8rem;border-radius:20px;border:1px solid var(--border-glass);background:var(--bg-glass)}
-    .message-send-btn{padding:.8rem 1rem;border-radius:20px;background:var(--gradient-primary);color:#fff;border:none;cursor:pointer}
-    
-    /* 🎤 Mikrofon Animasyonu */
-    .mic-active{
-      animation: micPulse 1s infinite;
-      background: var(--gradient-secondary) !important;
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --surface: #111111;
+      --surface-elevated: #1a1a1a;
+      --surface-hover: #222222;
+      --border: rgba(255,255,255,.06);
+      --border-strong: rgba(255,255,255,.12);
+      --text-primary: #ffffff;
+      --text-secondary: #a8a8a8;
+      --text-tertiary: #666666;
+      --brand: #FFE500;
+      --brand-dim: #FFD700;
+      --brand-dark: #E6CF00;
+      --accent-green: #00FF94;
+      --accent-red: #FF3B5C;
+      --accent-blue: #00A8FF;
+      --accent-purple: #A855F7;
+      --glass-bg: rgba(17,17,17,.85);
+      --glass-border: rgba(255,255,255,.08);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,.4);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.5);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,.6);
+      --shadow-xl: 0 16px 48px rgba(0,0,0,.7);
+      --shadow-glow: 0 0 20px rgba(255,229,0,.3);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
-    @keyframes micPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
     
-    @media(max-width:480px){
-      .header{margin:0 5px;padding:1rem}
-      .brand-text{display:none}
-      .logo{width:45px;height:45px;font-size:1.5rem}
-      .search-section{margin:15px 5px;padding:1.5rem}
-      .search-row{grid-template-columns:1fr;gap:.8rem}
-      .form-row{grid-template-columns:1fr}
-      .place-actions{flex-direction:column;gap:.5rem}
-      .results-header{padding:0 15px}
-      .places-grid{padding:0 5px 100px}
-      .place-card{padding:1.5rem}
-      .place-title{font-size:1.1rem}
-      .modal-body{padding:1.5rem}
+    html[data-theme="light"] {
+      --bg-primary: #ffffff;
+      --bg-secondary: #fafafa;
+      --surface: #ffffff;
+      --surface-elevated: #ffffff;
+      --surface-hover: #f5f5f5;
+      --border: rgba(0,0,0,.06);
+      --border-strong: rgba(0,0,0,.12);
+      --text-primary: #000000;
+      --text-secondary: #666666;
+      --text-tertiary: #999999;
+      --glass-bg: rgba(255,255,255,.85);
+      --glass-border: rgba(0,0,0,.08);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,.08);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.1);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+      --shadow-xl: 0 16px 48px rgba(0,0,0,.15);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+      overflow-x: hidden;
+    }
+    
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--brand);
+      border-radius: var(--radius-full);
+    }
+    
+    ::selection {
+      background: var(--brand);
+      color: #000;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+      background: var(--bg-primary);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px) saturate(180%);
+      background: var(--glass-bg);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      gap: 16px;
+    }
+    
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.3s var(--ease-out);
+    }
+    
+    .brand:active {
+      transform: scale(0.96);
+    }
+    
+    .brand-emoji {
+      font-size: 32px;
+      filter: drop-shadow(0 0 10px rgba(255,229,0,.4));
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: var(--radius-full);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s var(--ease-out);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.1), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .btn:hover::before {
+      opacity: 1;
+    }
+    
+    .btn-primary {
+      background: var(--brand);
+      color: #000;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(255,229,0,.3);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255,229,0,.4);
+    }
+    
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+    
+    .btn-secondary {
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-strong);
+    }
+    
+    .btn-icon {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      background: var(--surface);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 18px;
+      transition: all 0.3s var(--ease-out);
+    }
+    
+    .btn-icon:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+      transform: scale(1.05);
+    }
+    
+    .btn-icon:active {
+      transform: scale(0.95);
+    }
+
+    .input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 15px;
+      font-family: inherit;
+      transition: all 0.3s var(--ease-out);
+      outline: none;
+    }
+    
+    .input:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(255,229,0,.1);
+      background: var(--surface-elevated);
+    }
+    
+    .input::placeholder {
+      color: var(--text-tertiary);
+    }
+    
+    select.input {
+      cursor: pointer;
+    }
+    
+    textarea.input {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .search-bar {
+      padding: 16px 20px 20px;
+      background: transparent;
+    }
+    
+    .search-wrapper {
+      position: relative;
+    }
+    
+    #search-input {
+      padding-left: 48px;
+      padding-right: 16px;
+      height: 50px;
+      border-radius: var(--radius-full);
+      font-size: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: all 0.4s var(--ease-out);
+    }
+    
+    #search-input:focus {
+      transform: scale(1.01);
+      box-shadow: 0 4px 20px rgba(0,0,0,.2);
+    }
+    
+    .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      opacity: 0.5;
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+    
+    #search-input:focus ~ .search-icon {
+      opacity: 1;
+      color: var(--brand);
+    }
+
+    .categories {
+      padding: 0 20px 20px;
+      overflow-x: auto;
+      display: flex;
+      gap: 10px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    
+    .categories::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .category-chip {
+      padding: 10px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s var(--ease-out);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .category-chip:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+    }
+    
+    .category-chip.active {
+      background: var(--brand);
+      color: #000;
+      border-color: var(--brand);
+      box-shadow: 0 4px 12px rgba(255,229,0,.3);
+      font-weight: 700;
+    }
+
+    .filters {
+      padding: 0 20px 16px;
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    
+    .filters::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .filter-btn {
+      padding: 8px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+    
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    main {
+      padding: 0 20px 80px;
+    }
+    
+    .place-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: all 0.4s var(--ease-out);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .place-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,229,0,.05), transparent);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    
+    .place-card:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--brand);
+    }
+    
+    .place-card:hover::before {
+      opacity: 1;
+    }
+    
+    .place-card:active {
+      transform: translateY(-2px) scale(1.005);
+    }
+    
+    .place-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .place-name {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    
+    .place-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .place-category,
+    .place-district,
+    .place-price {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    
+    .place-price {
+      color: var(--accent-green);
+    }
+    
+    .place-address {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 12px 0;
+      display: flex;
+      align-items: start;
+      gap: 8px;
+    }
+    
+    .place-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      margin-top: 12px;
+    }
+    
+    .place-status.open {
+      background: rgba(0,255,148,.1);
+      color: var(--accent-green);
+      border: 1px solid rgba(0,255,148,.2);
+    }
+    
+    .place-status.closed {
+      background: rgba(255,59,92,.1);
+      color: var(--accent-red);
+      border: 1px solid rgba(255,59,92,.2);
+    }
+    
+    .favorite-btn {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-full);
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.3s var(--ease-spring);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .favorite-btn:hover {
+      transform: scale(1.15);
+      border-color: var(--brand);
+    }
+    
+    .favorite-btn:active {
+      transform: scale(0.9);
+    }
+
+    .pharmacy-card {
+      background: linear-gradient(135deg, rgba(0,255,148,.1), rgba(0,168,255,.1));
+      border: 2px solid var(--accent-green);
+    }
+    
+    .pharmacy-card .place-name {
+      color: var(--accent-green);
+    }
+    
+    .pharmacy-day {
+      display: inline-flex;
+      padding: 6px 12px;
+      background: var(--accent-green);
+      color: #000;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0,0,0,.75);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: modalFadeIn 0.3s var(--ease-out);
+    }
+    
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      overflow: hidden;
+      animation: modalSlideUp 0.4s var(--ease-out);
+      box-shadow: var(--shadow-xl);
+    }
+    
+    @keyframes modalSlideUp {
+      from { 
+        transform: translateY(40px) scale(0.95);
+        opacity: 0;
+      }
+      to { 
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+    
+    .modal-header {
+      padding: 24px 24px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface-elevated);
+    }
+    
+    .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      max-height: calc(85vh - 80px);
+    }
+    
+    .modal-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .detail-section {
+      margin-bottom: 24px;
+    }
+    
+    .detail-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    
+    .detail-value {
+      font-size: 15px;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+    
+    .action-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 24px;
+    }
+    
+    .action-buttons .btn {
+      width: 100%;
+    }
+
+    .admin-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 2px solid var(--brand);
+      box-shadow: var(--shadow-xl);
+      transform: translateY(100%);
+      transition: transform 0.4s var(--ease-out);
+      z-index: 999;
+      max-height: 85vh;
+      overflow-y: auto;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    }
+    
+    .admin-panel.active {
+      transform: translateY(0);
+    }
+    
+    .admin-header {
+      padding: 20px 24px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-dim));
+      color: #000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    }
+    
+    .admin-header h2 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    
+    .admin-body {
+      padding: 24px;
+      background: var(--bg-secondary);
+    }
+    
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      overflow-x: auto;
+    }
+    
+    .admin-tab {
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+    
+    .admin-tab.active {
+      background: var(--surface);
+      color: var(--text-primary);
+    }
+    
+    .admin-tab-content {
+      display: none;
+    }
+    
+    .admin-tab-content.active {
+      display: block;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+    }
+    
+    .form-note {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 6px;
+      font-style: italic;
+    }
+    
+    .admin-list-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.3s;
+    }
+    
+    .admin-list-item:hover {
+      border-color: var(--border-strong);
+      transform: translateX(4px);
+    }
+    
+    .admin-item-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .weekly-schedule {
+      display: grid;
+      gap: 12px;
+    }
+    
+    .day-input-group {
+      background: var(--surface);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+    
+    .day-label {
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+      display: block;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      padding: 16px 24px;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-lg);
+      z-index: 9999;
+      transition: transform 0.4s var(--ease-out);
+      min-width: 280px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 14px;
+      backdrop-filter: blur(20px);
+    }
+    
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+    
+    .toast.success {
+      background: var(--accent-green);
+      color: #000;
+      border-color: var(--accent-green);
+      box-shadow: 0 8px 24px rgba(0,255,148,.3);
+    }
+    
+    .toast.error {
+      background: var(--accent-red);
+      color: #fff;
+      border-color: var(--accent-red);
+      box-shadow: 0 8px 24px rgba(255,59,92,.3);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+    
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--surface-elevated);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-tertiary);
+    }
+    
+    .empty-state-icon {
+      font-size: 72px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+      filter: grayscale(1);
+    }
+    
+    .empty-state-text {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 480px) {
+      .header-row {
+        padding: 14px 16px;
+      }
+      
+      .brand {
+        font-size: 20px;
+      }
+      
+      .brand-emoji {
+        font-size: 28px;
+      }
+      
+      .search-bar,
+      .categories,
+      .filters,
+      main {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      
+      .place-card {
+        padding: 16px;
+      }
+      
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+      
+      .modal-content {
+        border-radius: var(--radius-lg);
+      }
     }
   </style>
 </head>
+
 <body>
-  <div class="app">
-    <header class="header">
-      <div class="header-content">
-     <div class="brand" onclick="window.handleBrandClick()">
-          <div class="logo">🍋
-            <div id="tapCounter" class="tap-counter">0</div>
-          </div>
-          <div class="brand-text">
-            <div class="app-title">LemmOn</div>
-            <div class="app-subtitle">Mersin Rehberi</div>
-          </div>
+  <div class="container">
+    
+    <header>
+      <div class="header-row">
+        <div class="brand" onclick="handleLogoClick()">
+          <span class="brand-emoji">🍋</span>
+          <span>LemmOn</span>
         </div>
         <div class="header-actions">
-      <select id="langSelect" class="form-control" onchange="window.handleLanguageChange()" style="width:90px;min-height:48px">
-            <option value="">🌍 Dil</option>
-            <option value="https://lemmon-tr.com">🇹🇷 Türkçe</option>
-            <option value="https://lemmon-en.com">🇺🇸 English</option>
-            <option value="https://lemmon-ar.com">🇸🇦 العربية</option>
-            <option value="https://lemmon-fr.com">🇫🇷 Français</option>
-            <option value="https://lemmon-de.com">🇩🇪 Deutsch</option>
-            <option value="https://lemmon-es.com">🇪🇸 Español</option>
-            <option value="https://lemmon-it.com">🇮🇹 Italiano</option>
-            <option value="https://lemmon-ru.com">🇷🇺 Русский</option>
-            <option value="https://lemmon-zh.com">ᴋᴜ Kurdî</option>
-          </select>
-          <button id="themeBtn" class="btn btn-icon btn-circle"><i class="fas fa-moon"></i></button>
-          <button id="menuBtn" class="btn btn-icon btn-circle"><i class="fas fa-bars"></i></button>
+          <button class="btn-icon" onclick="toggleTheme()" title="Tema">
+            <span id="theme-icon">🌙</span>
+          </button>
+          <button class="btn-icon" onclick="showFavorites()" title="Favoriler">
+            ❤️
+          </button>
+          <button class="btn-icon" onclick="showMenu()" title="Menü">
+            ☰
+          </button>
         </div>
+      </div>
+      
+      <div class="search-bar">
+        <div class="search-wrapper">
+          <input 
+            type="text" 
+            id="search-input" 
+            class="input" 
+            placeholder="Mekan ara..."
+            oninput="handleSearch()"
+          />
+          <span class="search-icon">🔍</span>
+        </div>
+      </div>
+      
+      <div class="categories" id="categories-container"></div>
+      
+      <div class="filters">
+        <button class="filter-btn" onclick="toggleFilter('district')" id="district-filter-btn">
+          📍 İlçe
+        </button>
+        <button class="filter-btn" onclick="toggleFilter('price')" id="price-filter-btn">
+          💰 Fiyat
+        </button>
       </div>
     </header>
 
-    <main>
-      <section class="search-section">
-        <div class="search-header">
-          <h1 class="search-title"><i class="fas fa-search"></i> Mekan Ara</h1>
-          <p class="search-subtitle">Mersin'deki en iyi mekanları keşfedin</p>
-        </div>
-        <div class="search-form">
-          <div class="search-row">
-            <input id="searchInput" type="search" class="form-control" placeholder="🔍 Restaurant, cafe, mekan ara...">
-            <button id="micBtn" class="btn btn-secondary btn-circle" title="Sesli arama"><i class="fas fa-microphone"></i></button>
-            <button id="locateBtn" class="btn btn-circle btn-success"><i class="fas fa-location-arrow"></i></button>
-          </div>
-          <div class="search-row">
-            <select id="districtFilter" class="form-control"><option value="">📍 Tüm İlçeler</option></select>
-            <select id="categoryFilter" class="form-control"><option value="">🏷️ Tüm Kategoriler</option></select>
-            <button id="clearBtn" class="btn btn-warning"><i class="fas fa-eraser"></i></button>
-          </div>
-          <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
-              <input id="openOnlyCheck" type="checkbox">
-              <span style="font-weight:600">🟢 Sadece açık mekanlar</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
-              <input id="nearMeCheck" type="checkbox">
-              <span style="font-weight:600">📍 Yakınımdakiler</span>
-            </label>
-          </div>
-        </div>
-      </section>
-
-      <div class="results-header">
-        <div class="results-count"><i class="fas fa-store"></i> <span id="countBadge">0</span> mekan bulundu</div>
-        <button class="btn btn-secondary" onclick="window.syncFirebaseData()">
-      </div>
-
-      <div id="placesGrid" class="places-grid">
-        <div class="loading">
-          <div class="loading-icon">🍋</div>
-          <h3>Veriler yükleniyor...</h3>
-          <p>Mersin'deki mekanlar getiriliyor</p>
-        </div>
+    <main id="main-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <div>Mekanlar yükleniyor...</div>
       </div>
     </main>
+
   </div>
 
-  <!-- 🔒 Şifre Modalı -->
-  <div id="passwordModal" class="modal">
+  <!-- DETAIL MODAL -->
+  <div class="modal" id="detail-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title"><i class="fas fa-lock"></i> Admin Girişi</h2>
-        <button onclick="closeModal('passwordModal')" class="btn" style="background:rgba(255,255,255,.2)"><i class="fas fa-times"></i></button>
+        <h2 class="modal-title" id="detail-name">Mekan</h2>
+        <button class="btn-icon" onclick="closeDetailModal()">✕</button>
+      </div>
+      <div class="modal-body" id="detail-body"></div>
+    </div>
+  </div>
+
+  <!-- FAVORITES MODAL -->
+  <div class="modal" id="favorites-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">❤️ Favorilerim</h2>
+        <button class="btn-icon" onclick="closeFavoritesModal()">✕</button>
+      </div>
+      <div class="modal-body" id="favorites-body"></div>
+    </div>
+  </div>
+
+  <!-- MENU MODAL -->
+  <div class="modal" id="menu-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">☰ Menü</h2>
+        <button class="btn-icon" onclick="closeMenuModal()">✕</button>
       </div>
       <div class="modal-body">
-        <div style="text-align:center;margin-bottom:2rem">
-          <div style="font-size:4rem;margin-bottom:1rem">🔐</div>
-          <h3>Gizli Admin Paneli</h3>
-          <p style="color:var(--text-secondary)">Şifreyi girin</p>
-        </div>
-        <input id="passwordInput" type="password" class="form-control" placeholder="Admin şifresi" style="text-align:center;font-size:1.2rem;margin-bottom:1rem">
-        <div style="display:flex;gap:1rem">
-          <button onclick="window.checkPassword()" class="btn btn-primary" style="flex:1">
-  <i class="fas fa-key"></i> Giriş
-</button>
-          <button onclick="closeModal('passwordModal')" class="btn" style="flex:1"><i class="fas fa-times"></i> İptal</button>
+        <button class="btn btn-secondary" onclick="showPharmacies()" style="width: 100%; margin-bottom: 12px;">
+          🏥 Nöbetçi Eczaneler
+        </button>
+        <button class="btn btn-secondary" onclick="showSupport()" style="width: 100%; margin-bottom: 12px;">
+          💬 Destek Talebi
+        </button>
+        <button class="btn btn-secondary" onclick="showAbout()" style="width: 100%;">
+          ℹ️ Hakkında
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHARMACIES MODAL -->
+  <div class="modal" id="pharmacies-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">🏥 Nöbetçi Eczaneler</h2>
+        <button class="btn-icon" onclick="closePharmaciesModal()">✕</button>
+      </div>
+      <div class="modal-body" id="pharmacies-body">
+        <div class="loading">
+          <div class="spinner"></div>
+          <div>Yükleniyor...</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 📱 Menü Modalı -->
-  <div id="menuModal" class="modal">
+  <!-- SUPPORT MODAL -->
+  <div class="modal" id="support-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title"><i class="fas fa-bars"></i> Menü</h2>
-        <button onclick="closeModal('menuModal')" class="btn" style="background:rgba(255,255,255,.2)"><i class="fas fa-times"></i></button>
+        <h2 class="modal-title">💬 Destek Talebi</h2>
+        <button class="btn-icon" onclick="closeSupportModal()">✕</button>
       </div>
       <div class="modal-body">
-        <div class="menu-item" onclick="openModal('supportModal'); closeModal('menuModal')">
-          <i class="fas fa-headset" style="color:var(--gradient-success)"></i>
-          <div>
-            <h3>Destek</h3>
-            <p style="color:var(--text-secondary);font-size:.85rem">Yardım ve destek talebi</p>
-          </div>
+        <div class="form-group">
+          <label class="form-label">İSİM SOYISIM *</label>
+          <input type="text" id="support-name" class="input" placeholder="Adınız Soyadınız">
         </div>
         
-        <div class="menu-item" onclick="showFavorites()">
-          <i class="fas fa-heart" style="color:var(--color-accent)"></i>
-          <div>
-            <h3>Favorilerim</h3>
-            <p style="color:var(--text-secondary);font-size:.85rem">Beğendiğiniz mekanlar</p>
-          </div>
+        <div class="form-group">
+          <label class="form-label">E-MAIL *</label>
+          <input type="email" id="support-email" class="input" placeholder="ornek@email.com">
+          <div class="form-note">⚠️ Email adresinizi doğru yazdığınızdan emin olun. Cevap bu adrese gelecek!</div>
         </div>
         
-        <div class="menu-item" onclick="showAbout()">
-          <i class="fas fa-info-circle" style="color:var(--gradient-primary)"></i>
-          <div>
-            <h3>Hakkımda</h3>
-            <p style="color:var(--text-secondary);font-size:.85rem">Uygulama bilgileri</p>
-          </div>
+        <div class="form-group">
+          <label class="form-label">KONU *</label>
+          <input type="text" id="support-subject" class="input" placeholder="Talep konusu">
         </div>
+        
+        <div class="form-group">
+          <label class="form-label">MESAJ *</label>
+          <textarea id="support-message" class="input" rows="5" placeholder="Talebinizi detaylı yazın..."></textarea>
+        </div>
+        
+        <button class="btn btn-primary" onclick="submitSupport()" style="width: 100%;">
+          📤 Gönder
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- 🆘 Destek Modalı -->
-  <div id="supportModal" class="modal">
+  <!-- DISTRICT FILTER MODAL -->
+  <div class="modal" id="district-filter-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title"><i class="fas fa-headset"></i> Destek Talebi</h2>
-        <button onclick="closeModal('supportModal')" class="btn" style="background:rgba(255,255,255,.2)"><i class="fas fa-times"></i></button>
+        <h2 class="modal-title">📍 İlçe Seç</h2>
+        <button class="btn-icon" onclick="closeDistrictFilterModal()">✕</button>
+      </div>
+      <div class="modal-body" id="district-filter-body"></div>
+    </div>
+  </div>
+
+  <!-- PRICE FILTER MODAL -->
+  <div class="modal" id="price-filter-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">💰 Fiyat Aralığı</h2>
+        <button class="btn-icon" onclick="closePriceFilterModal()">✕</button>
       </div>
       <div class="modal-body">
-        <div style="text-align:center;margin-bottom:2rem">
-          <div style="font-size:4rem;margin-bottom:1rem">🆘</div>
-          <h3>Size Nasıl Yardımcı Olabiliriz?</h3>
-          <p style="color:var(--text-secondary);font-size:.9rem">Tüm alanları doldurun</p>
-        </div>
-        
-        <div class="form-grid">
-          <div class="form-row">
-            <input id="supportName" type="text" class="form-control" placeholder="👤 İsim Soyisim *" maxlength="50" required>
-            <input id="supportEmail" type="email" class="form-control" placeholder="📧 Email Adresi *" maxlength="100" required>
-          </div>
-          
-          <select id="supportCategory" class="form-control" required>
-            <option value="">📋 Konu Seçin *</option>
-            <option value="technical">🔧 Teknik Sorun</option>
-            <option value="content">📝 İçerik Sorunu</option>
-            <option value="account">👤 Mekan Eklemek İstiyorum</option>
-            <option value="feature">💡 Özellik İsteği</option>
-            <option value="bug">🐛 Hata Bildirimi</option>
-            <option value="other">❓ Diğer</option>
-          </select>
-          
-          <input id="supportSubject" type="text" class="form-control" placeholder="📌 Konu Başlığı *" maxlength="100" required>
-          
-          <textarea id="supportMessage" class="form-control" rows="5" placeholder="📝 Sorununuzu detaylı olarak açıklayın..." maxlength="1000" required></textarea>
-          
-          <div style="font-size:.8rem;color:var(--text-muted);text-align:center">
-            <i class="fas fa-info-circle"></i> Email adresinize yanıt göndereceğiz.Lütfen geçerli bir email kullanın.
-          </div>
-          
-          <button onclick="window.submitSupport()" class="btn btn-primary">">
-            <i class="fas fa-paper-plane"></i> Destek Talebi Gönder
-          </button>
-        </div>
+        <button class="btn btn-secondary" onclick="selectPriceFilter('all')" style="width: 100%; margin-bottom: 12px;">
+          Tümü
+        </button>
+        <button class="btn btn-secondary" onclick="selectPriceFilter('€')" style="width: 100%; margin-bottom: 12px;">
+          € Ekonomik
+        </button>
+        <button class="btn btn-secondary" onclick="selectPriceFilter('€€')" style="width: 100%; margin-bottom: 12px;">
+          €€ Orta
+        </button>
+        <button class="btn btn-secondary" onclick="selectPriceFilter('€€€')" style="width: 100%;">
+          €€€ Lüks
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- 💬 Chat Modalı -->
-  <div id="chatModal" class="modal">
-    <div class="modal-content" style="max-height:90vh">
+  <!-- ADMIN PIN MODAL -->
+  <div class="modal" id="admin-pin-modal">
+    <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title"><i class="fas fa-comments"></i> Destek Chat</h2>
-        <button onclick="closeModal('chatModal')" class="btn" style="background:rgba(255,255,255,.2)"><i class="fas fa-times"></i></button>
+        <h2 class="modal-title">🔑 Admin Girişi</h2>
+        <button class="btn-icon" onclick="closeAdminPinModal()">✕</button>
       </div>
-      <div class="modal-body" style="padding:1rem">
-        <div id="currentChatInfo" style="background:var(--bg-card);padding:1rem;border-radius:10px;margin-bottom:1rem">
-          <h4 id="chatSubject">Konu Yükleniyor...</h4>
-          <p id="chatUserInfo" style="font-size:.9rem;color:var(--text-secondary)">Kullanıcı bilgileri...</p>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">PIN KODU</label>
+          <input 
+            type="password" 
+            id="admin-pin-input" 
+            class="input" 
+            placeholder="4 haneli PIN"
+            maxlength="4"
+            onkeypress="if(event.key==='Enter') checkAdminPin()"
+          />
         </div>
-        
-        <div class="chat-container">
-          <div id="chatMessages" class="chat-messages">
-            <div style="text-align:center;color:var(--text-muted);font-size:.9rem">
-              <i class="fas fa-comments"></i> Chat yükleniyor...
+        <button class="btn btn-primary" onclick="checkAdminPin()" style="width: 100%;">
+          Giriş Yap
+        </button>
+        <p style="margin-top: 16px; font-size: 13px; color: var(--text-tertiary); text-align: center;">
+          Varsayılan PIN: 1234
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div class="admin-panel" id="admin-panel">
+    <div class="admin-header">
+      <h2>⚙️ Admin Panel</h2>
+      <button class="btn-icon" onclick="closeAdminPanel()" style="color: #000; border-color: rgba(0,0,0,.2);">✕</button>
+    </div>
+    <div class="admin-body">
+      
+      <!-- TABS -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchAdminTab('places')">📍 Mekanlar</button>
+        <button class="admin-tab" onclick="switchAdminTab('categories')">🏷️ Kategoriler</button>
+        <button class="admin-tab" onclick="switchAdminTab('pharmacies')">🏥 Eczaneler</button>
+        <button class="admin-tab" onclick="switchAdminTab('support')">💬 Talepler</button>
+        <button class="admin-tab" onclick="switchAdminTab('settings')">⚙️ Ayarlar</button>
+      </div>
+      
+      <!-- PLACES TAB -->
+      <div class="admin-tab-content active" id="admin-places-tab">
+        <div style="background: var(--surface); padding: 20px; border-radius: var(--radius-lg); margin-bottom: 24px; border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 20px; font-weight: 800; font-size: 18px;">📍 Mekan Ekle/Düzenle</h3>
+          
+          <input type="hidden" id="edit-place-id" value="">
+          
+          <div class="form-group">
+            <label class="form-label">MEKAN ADI *</label>
+            <input type="text" id="place-name" class="input" placeholder="Örn: Starbucks">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">KATEGORİ *</label>
+            <select id="place-category" class="input">
+              <option value="">Seçiniz</option>
+              <option value="cafe">☕ Cafe</option>
+              <option value="restaurant">🍽️ Restoran</option>
+              <option value="shopping">🛍️ Alışveriş</option>
+              <option value="entertainment">🎮 Eğlence</option>
+              <option value="health">🏥 Sağlık</option>
+              <option value="education">📚 Eğitim</option>
+              <option value="hotel">🏨 Konaklama</option>
+              <option value="other">📌 Diğer</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">İLÇE *</label>
+            <select id="place-district" class="input"></select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">FİYAT ARALIĞI</label>
+            <select id="place-price" class="input">
+              <option value="">Seçiniz</option>
+              <option value="€">€ Ekonomik</option>
+              <option value="€€">€€ Orta</option>
+              <option value="€€€">€€€ Lüks</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">ADRES *</label>
+            <textarea id="place-address" class="input" placeholder="Tam adres"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">TELEFON</label>
+            <input type="tel" id="place-phone" class="input" placeholder="0324 123 45 67">
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">ENLEM</label>
+              <input type="number" step="0.000001" id="place-lat" class="input" placeholder="36.812">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">BOYLAM</label>
+              <input type="number" step="0.000001" id="place-lng" class="input" placeholder="34.641">
             </div>
           </div>
-          <div class="message-input-container">
-            <input id="chatMessageInput" type="text" class="message-input" placeholder="Mesajınızı yazın..." maxlength="500">
-            <button onclick="sendChatMessage()" class="message-send-btn">
-              <i class="fas fa-paper-plane"></i>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">AÇILIŞ</label>
+              <input type="time" id="place-open" class="input" value="09:00">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">KAPANIŞ</label>
+              <input type="time" id="place-close" class="input" value="22:00">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">AÇIKLAMA</label>
+            <textarea id="place-description" class="input" placeholder="Mekan hakkında bilgi"></textarea>
+          </div>
+          
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-primary" onclick="savePlaceData()" style="flex: 1;">
+              💾 Kaydet
+            </button>
+            <button class="btn btn-secondary" onclick="resetPlaceForm()">
+              🔄 Temizle
             </button>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ❤️ Favoriler Modalı -->
-  <div id="favoritesModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title"><i class="fas fa-heart"></i> Favorilerim</h2>
-        <button onclick="closeModal('favoritesModal')" class="btn" style="background:rgba(255,255,255,.2)"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <div id="favoritesList"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ℹ️ Hakkımda Modalı -->
-  <div id="aboutModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title"><i class="fas fa-info-circle"></i> Hakkımda</h2>
-        <button onclick="closeModal('aboutModal')" class="btn" style="background:rgba(255,255,255,.2)"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <div style="text-align:center;margin-bottom:2rem">
-          <div style="font-size:4rem;margin-bottom:1rem">🍋</div>
-          <h2 style="background:var(--gradient-warning);-webkit-background-clip:text;-webkit-text-fill-color:transparent">LemmOn Mersin</h2>
-          <p style="color:var(--text-secondary);margin-bottom:2rem">Modern Şehir Rehberi</p>
         </div>
         
-        <div style="text-align:left">
-          <h3 style="margin-bottom:1rem;color:var(--text-primary)">✨ Özellikler:</h3>
-          <ul style="list-style:none;padding:0">
-            <li style="padding:.5rem 0;display:flex;align-items:center;gap:.5rem">
-              <i class="fas fa-search" style="color:var(--gradient-primary);width:20px"></i>
-              Akıllı arama sistemi
-            </li>
-            <li style="padding:.5rem 0;display:flex;align-items:center;gap:.5rem">
-              <i class="fas fa-microphone" style="color:var(--gradient-secondary);width:20px"></i>
-              Sesli arama özelliği
-            </li>
-            <li style="padding:.5rem 0;display:flex;align-items:center;gap:.5rem">
-              <i class="fas fa-map-marker-alt" style="color:var(--color-accent);width:20px"></i>
-              GPS konum servisleri
-            </li>
-            <li style="padding:.5rem 0;display:flex;align-items:center;gap:.5rem">
-              <i class="fas fa-heart" style="color:#ff6b6b;width:20px"></i>
-              Favoriler sistemi
-            </li>
-            <li style="padding:.5rem 0;display:flex;align-items:center;gap:.5rem">
-              <i class="fas fa-comments" style="color:var(--gradient-success);width:20px"></i>
-              Canlı destek chat sistemi
-            </li>
-          </ul>
+        <div>
+          <h3 style="margin-bottom: 16px; font-weight: 800; font-size: 18px;">📋 Mekanlar</h3>
+          <div id="admin-places-list"></div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- 👑 Admin Panel Modalı -->
-  <div id="adminModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title"><i class="fas fa-crown"></i> Admin Panel</h2>
-        <button onclick="closeModal('adminModal')" class="btn" style="background:rgba(255,255,255,.2)"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="admin-section">
-          <h3 class="admin-title"><i class="fas fa-rocket"></i> Hızlı Test</h3>
-          <button onclick="window.addSampleData()" class="btn btn-success" style="width:100%">
-            <i class="fas fa-plus"></i> 5 Test Mekanı Ekle
+      
+      <!-- KATEGORİLER TAB -->
+      <div class="admin-tab-content" id="admin-categories-tab">
+        <div style="background: var(--surface); padding: 20px; border-radius: var(--radius-lg); margin-bottom: 24px; border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 20px; font-weight: 800; font-size: 18px;">🏷️ Yeni Kategori Ekle</h3>
+          
+          <div class="form-group">
+            <label class="form-label">KATEGORİ ADI *</label>
+            <input type="text" id="new-category-name" class="input" placeholder="Örn: Spor Salonları">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">İKON (EMOJİ) *</label>
+            <input type="text" id="new-category-icon" class="input" placeholder="Örn: 💪" maxlength="2">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">KATEGORİ ID *</label>
+            <input type="text" id="new-category-id" class="input" placeholder="Örn: gym">
+            <div class="form-note">İngilizce, küçük harf, boşluksuz</div>
+          </div>
+          
+          <button class="btn btn-primary" onclick="addNewCategory()" style="width: 100%;">
+            ➕ Kategori Ekle
           </button>
         </div>
-
-        <div class="admin-section">
-          <h3 class="admin-title"><i class="fas fa-plus-circle"></i> Mekan Ekle</h3>
-          <div class="form-grid">
-            <input id="f_name" type="text" class="form-control" placeholder="🏪 İşletme adı *">
-            <div class="form-row">
-              <select id="f_category" class="form-control">
-                <option value="">🏷️ Kategori Seç *</option>
-                <option value="Restaurant">Restaurant</option>
-                <option value="Cafe">Cafe</option>
-                <option value="Fast Food">Fast Food</option>
-                <option value="Otel">Otel</option>
-                <option value="Market">Market</option>
-                <option value="Alışveriş">Alışveriş</option>
-                <option value="Sağlık">Sağlık</option>
-                <option value="Eğlence">Eğlence</option>
-              </select>
-              <select id="f_district" class="form-control">
-                <option value="">📍 İlçe Seç *</option>
-                <option value="Akdeniz">Akdeniz</option>
-                <option value="Mezitli">Mezitli</option>
-                <option value="Toroslar">Toroslar</option>
-                <option value="Yenişehir">Yenişehir</option>
-                <option value="Erdemli">Erdemli</option>
-                <option value="Tarsus">Tarsus</option>
-                <option value="Mut">Mut</option>
-                <option value="Silifke">Silifke</option>
-              </select>
+        
+        <div>
+          <h3 style="margin-bottom: 16px; font-weight: 800; font-size: 18px;">📋 Kategoriler</h3>
+          <div id="admin-categories-list"></div>
+        </div>
+      </div>
+      
+      <!-- PHARMACIES TAB -->
+      <div class="admin-tab-content" id="admin-pharmacies-tab">
+        <div style="background: var(--surface); padding: 20px; border-radius: var(--radius-lg); margin-bottom: 24px; border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 20px; font-weight: 800; font-size: 18px;">🏥 Haftalık Eczane Ekle</h3>
+          
+          <div class="form-group">
+            <label class="form-label">HAFTA BAŞLANGIÇ TARİHİ *</label>
+            <input type="date" id="pharmacy-week-start" class="input">
+            <div class="form-note">Bu haftanın pazartesi gününü seçin</div>
+          </div>
+          
+          <div class="weekly-schedule">
+            <div class="day-input-group">
+              <label class="day-label">📅 PAZARTESİ</label>
+              <input type="text" id="pharmacy-monday-name" class="input" placeholder="Eczane adı" style="margin-bottom: 8px;">
+              <input type="text" id="pharmacy-monday-address" class="input" placeholder="Adres" style="margin-bottom: 8px;">
+              <input type="tel" id="pharmacy-monday-phone" class="input" placeholder="Telefon">
             </div>
-<input id="f_address" type="text" class="form-control" placeholder="📍 Adres">
-<input id="f_phone" type="tel" class="form-control" placeholder="📞 Telefon">
-
-<!-- 🌐 YENİ KOORDINAT VE LİNK ALANLARI -->
-<div style="background:var(--bg-card);padding:1rem;border-radius:10px;margin:1rem 0">
-  <h4 style="margin-bottom:1rem;color:var(--text-primary);display:flex;align-items:center;gap:0.5rem">
-    <i class="fas fa-map-marked-alt"></i> Konum Bilgisi (En az biri zorunlu!)
-  </h4>
-  
-  <div class="form-row">
-    <input id="f_latitude" type="number" step="any" class="form-control" 
-           placeholder="🌐 Enlem (36.8121)" title="Enlem koordinatı">
-    <input id="f_longitude" type="number" step="any" class="form-control" 
-           placeholder="🌐 Boylam (34.6415)" title="Boylam koordinatı">
-  </div>
-  
-  <div style="text-align:center;margin:0.5rem 0;color:var(--text-muted);font-weight:600">
-    ⚡ VEYA ⚡
-  </div>
-  
-  <input id="f_maps_link" type="url" class="form-control" 
-         placeholder="🔗 Google Maps Linki">
-  
-  <div style="font-size:0.8rem;color:var(--text-muted);text-align:center;margin-top:0.5rem;line-height:1.4">
-    💡 <strong>İpucu:</strong><br>
-    • Google Maps'ten "Koordinatları kopyala" veya "Linki paylaş"<br>
-    • En az birini mutlaka doldurun!
-
-            <textarea id="f_description" class="form-control" rows="3" placeholder="📝 Açıklama"></textarea>
-           <button onclick="window.addPlace()" class="btn btn-primary" style="width:100%">
-              <i class="fas fa-save"></i> Mekan Kaydet
-            </button>
+            
+            <div class="day-input-group">
+              <label class="day-label">📅 SALI</label>
+              <input type="text" id="pharmacy-tuesday-name" class="input" placeholder="Eczane adı" style="margin-bottom: 8px;">
+              <input type="text" id="pharmacy-tuesday-address" class="input" placeholder="Adres" style="margin-bottom: 8px;">
+              <input type="tel" id="pharmacy-tuesday-phone" class="input" placeholder="Telefon">
+            </div>
+            
+            <div class="day-input-group">
+              <label class="day-label">📅 ÇARŞAMBA</label>
+              <input type="text" id="pharmacy-wednesday-name" class="input" placeholder="Eczane adı" style="margin-bottom: 8px;">
+              <input type="text" id="pharmacy-wednesday-address" class="input" placeholder="Adres" style="margin-bottom: 8px;">
+              <input type="tel" id="pharmacy-wednesday-phone" class="input" placeholder="Telefon">
+            </div>
+            
+            <div class="day-input-group">
+              <label class="day-label">📅 PERŞEMBE</label>
+              <input type="text" id="pharmacy-thursday-name" class="input" placeholder="Eczane adı" style="margin-bottom: 8px;">
+              <input type="text" id="pharmacy-thursday-address" class="input" placeholder="Adres" style="margin-bottom: 8px;">
+              <input type="tel" id="pharmacy-thursday-phone" class="input" placeholder="Telefon">
+            </div>
+            
+            <div class="day-input-group">
+              <label class="day-label">📅 CUMA</label>
+              <input type="text" id="pharmacy-friday-name" class="input" placeholder="Eczane adı" style="margin-bottom: 8px;">
+              <input type="text" id="pharmacy-friday-address" class="input" placeholder="Adres" style="margin-bottom: 8px;">
+              <input type="tel" id="pharmacy-friday-phone" class="input" placeholder="Telefon">
+            </div>
+            
+            <div class="day-input-group">
+              <label class="day-label">📅 CUMARTESİ</label>
+              <input type="text" id="pharmacy-saturday-name" class="input" placeholder="Eczane adı" style="margin-bottom: 8px;">
+              <input type="text" id="pharmacy-saturday-address" class="input" placeholder="Adres" style="margin-bottom: 8px;">
+              <input type="tel" id="pharmacy-saturday-phone" class="input" placeholder="Telefon">
+            </div>
+            
+            <div class="day-input-group">
+              <label class="day-label">📅 PAZAR</label>
+              <input type="text" id="pharmacy-sunday-name" class="input" placeholder="Eczane adı" style="margin-bottom: 8px;">
+              <input type="text" id="pharmacy-sunday-address" class="input" placeholder="Adres" style="margin-bottom: 8px;">
+              <input type="tel" id="pharmacy-sunday-phone" class="input" placeholder="Telefon">
+            </div>
+          </div>
+          
+          <button class="btn btn-primary" onclick="saveWeeklyPharmacies()" style="width: 100%; margin-top: 20px;">
+            💾 Haftalık Kaydet
+          </button>
+        </div>
+        
+        <div>
+          <h3 style="margin-bottom: 16px; font-weight: 800; font-size: 18px;">📋 Eczane Haftaları</h3>
+          <div id="admin-pharmacies-list"></div>
+        </div>
+      </div>
+      
+      <!-- SUPPORT TAB -->
+      <div class="admin-tab-content" id="admin-support-tab">
+        <div>
+          <h3 style="margin-bottom: 16px; font-weight: 800; font-size: 18px;">📬 Destek Talepleri</h3>
+          <div id="admin-support-list"></div>
+        </div>
+      </div>
+      
+      <!-- SETTINGS TAB -->
+      <div class="admin-tab-content" id="admin-settings-tab">
+        <!-- Hakkımda Düzenleme -->
+        <div style="background: var(--surface); padding: 20px; border-radius: var(--radius-lg); margin-bottom: 24px; border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 20px; font-weight: 800; font-size: 18px;">ℹ️ Hakkımda Bölümü</h3>
+          
+          <div class="form-group">
+            <label class="form-label">BAŞLIK</label>
+            <input type="text" id="about-title" class="input" placeholder="LemmOn Mersin">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">ALT BAŞLIK</label>
+            <input type="text" id="about-subtitle" class="input" placeholder="Mersin Şehir Rehberi">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">AÇIKLAMA</label>
+            <textarea id="about-description" class="input" rows="4" placeholder="Mersin'deki en iyi mekanları keşfet..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">VERSİYON</label>
+            <input type="text" id="about-version" class="input" placeholder="V2.0 • 2025">
+          </div>
+          
+          <button class="btn btn-primary" onclick="saveAboutData()" style="width: 100%;">
+            💾 Kaydet
+          </button>
+        </div>
+        
+        <!-- Yedekleme -->
+        <div style="background: var(--surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 20px; font-weight: 800; font-size: 18px;">💾 Yedekleme</h3>
+          
+          <button class="btn btn-secondary" onclick="exportBackup()" style="width: 100%; margin-bottom: 12px;">
+            📥 Yedek Al
+          </button>
+          
+          <button class="btn btn-secondary" onclick="importBackup()" style="width: 100%;">
+            📤 Yedek Yükle
+          </button>
+          
+          <div class="form-note" style="margin-top: 12px;">
+            💡 Yedek dosyası mekanları ve favorileri içerir
           </div>
         </div>
+      </div>
+      
+    </div>
+  </div>
 
-        <div class="admin-section">
-          <h3 class="admin-title"><i class="fas fa-list"></i> Mevcut Mekanlar (<span id="adminCount">0</span>)</h3>
-          <div id="adminPlacesList" style="max-height:300px;overflow-y:auto"></div>
-        </div>
-
-        <div class="admin-section">
-          <h3 class="admin-title"><i class="fas fa-headset"></i> Destek Talepleri (<span id="supportCount">0</span>)</h3>
-          <div style="display:flex;gap:1rem;margin-bottom:1rem">
-            <button onclick="window.loadSupportRequests()" class="btn btn-secondary">
-              <i class="fas fa-sync"></i> Yenile
-            </button>
-          </div>
-          <div id="supportRequestsList" style="max-height:400px;overflow-y:auto"></div>
+  <!-- ABOUT MODAL -->
+  <div class="modal" id="about-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">ℹ️ Hakkında</h2>
+        <button class="btn-icon" onclick="closeAboutModal()">✕</button>
+      </div>
+      <div class="modal-body" id="about-modal-body">
+        <div style="text-align: center; padding: 20px 0;">
+          <div style="font-size: 80px; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(255,229,0,.4));">🍋</div>
+          <h2 style="margin-bottom: 12px; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">LemmOn Mersin</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 16px;">Mersin Şehir Rehberi</p>
+          <p style="font-size: 15px; line-height: 1.7; color: var(--text-secondary);">
+            Mersin'deki en iyi mekanları keşfet! Cafeler, restoranlar, alışveriş merkezleri ve daha fazlası...
+          </p>
+          <p style="margin-top: 32px; font-size: 13px; color: var(--text-tertiary); font-weight: 600;">
+            V2.0 • 2025
+          </p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 🔥 Firebase v9 Modular SDK -->
-  <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
-
-
+  <!-- JAVASCRIPT -->
+  <script>
+    // Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA-q76A-JU1w6KigjqZuU-YDywKDBp3KSw",
       authDomain: "lemmon-2e548.firebaseapp.com",
@@ -542,1006 +1430,1191 @@ import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } 
       messagingSenderId: "704438411759",
       appId: "1:704438411759:web:63de3a656b2067feccd61a"
     };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
     
-console.log('🔥 Firebase başarıyla başlatıldı!');
-console.log('🔥 Firebase aktif!');
-
-
-
-    // Global yap
-    window.db = db;
-    window.collection = collection;
-    window.addDoc = addDoc;
-    window.getDocs = getDocs;
-    window.deleteDoc = deleteDoc;
-    window.doc = doc;
-    window.updateDoc = updateDoc;
-
-    // Uygulamayı başlat
-    initApp();
-  </script>
-
-  <script>
-    // 🌐 Global değişkenler
-    let places = [];
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    
+    // Globals
+    let allPlaces = [];
     let filteredPlaces = [];
-    let brandClickCount = 0;
-    let brandClickTimer = null;
-    let isAdminLoggedIn = false;
-    let currentChatId = null;
-    let chatMessages = [];
-    let userLocation = null;
-
-    // 📧 Email validation regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    // 🎙️ SESLI ARAMA - Web Speech API
-    function startVoiceSearch() {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        showToast('❌ Tarayıcınız sesli aramayı desteklemiyor', 'error');
-        return;
+    let currentCategory = 'all';
+    let currentDistrict = 'all';
+    let currentPrice = 'all';
+    let favorites = [];
+    let currentDetailPlace = null;
+    let isAdminMode = false;
+    let logoClickCount = 0;
+    let logoClickTimer = null;
+    let currentAdminTab = 'places';
+    
+    let categories = [
+      { id: 'all', name: 'Tümü', icon: '🌟' },
+      { id: 'cafe', name: 'Cafe', icon: '☕' },
+      { id: 'restaurant', name: 'Restoran', icon: '🍽️' },
+      { id: 'shopping', name: 'Alışveriş', icon: '🛍️' },
+      { id: 'entertainment', name: 'Eğlence', icon: '🎮' },
+      { id: 'health', name: 'Sağlık', icon: '🏥' },
+      { id: 'education', name: 'Eğitim', icon: '📚' },
+      { id: 'hotel', name: 'Konaklama', icon: '🏨' },
+      { id: 'other', name: 'Diğer', icon: '📌' }
+    ];
+    
+    const districts = [
+      'Akdeniz', 'Mezitli', 'Toroslar', 'Yenişehir',
+      'Anamur', 'Aydıncık', 'Bozyazı', 'Çamlıyayla',
+      'Erdemli', 'Gülnar', 'Mut', 'Silifke', 'Tarsus'
+    ];
+    
+    const dayNames = {
+      monday: 'Pazartesi',
+      tuesday: 'Salı',
+      wednesday: 'Çarşamba',
+      thursday: 'Perşembe',
+      friday: 'Cuma',
+      saturday: 'Cumartesi',
+      sunday: 'Pazar'
+    };
+    
+    // Logo Click
+    function handleLogoClick() {
+      logoClickCount++;
+      if (logoClickTimer) clearTimeout(logoClickTimer);
+      logoClickTimer = setTimeout(() => { logoClickCount = 0; }, 2000);
+      
+      if (logoClickCount === 17) {
+        logoClickCount = 0;
+        clearTimeout(logoClickTimer);
+        showAdminLogin();
+        showToast('🔓 Gizli admin girişi!', 'success');
       }
-
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
       
-      recognition.lang = 'tr-TR';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      const micBtn = document.getElementById('micBtn');
-      micBtn.innerHTML = '<i class="fas fa-microphone-slash" style="color:#ff6b6b"></i>';
-      micBtn.classList.add('mic-active');
-      
-      showToast('🎤 Dinleniyor... Konuşun!', 'warning');
-
-      recognition.start();
-
-      recognition.onresult = function(event) {
-        const speechResult = event.results[0][0].transcript;
-        document.getElementById('searchInput').value = speechResult;
-        renderPlaces();
-        showToast(`🔍 Arama: "${speechResult}"`, 'success');
-      };
-
-      recognition.onerror = function(event) {
-        showToast('❌ Sesli arama hatası: ' + event.error, 'error');
-      };
-
-      recognition.onend = function() {
-        micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
-        micBtn.classList.remove('mic-active');
-      };
+      if (logoClickCount >= 10 && logoClickCount < 17) {
+        console.log(`🔑 ${17 - logoClickCount} tıklama kaldı...`);
+      }
     }
-
-    // 📍 KONUM SERVİSLERİ - Geolocation API
-    function getUserLocation() {
-      if (!navigator.geolocation) {
-        showToast('❌ Tarayıcınız konum servislerini desteklemiyor', 'error');
-        return;
-      }
-
-      const locateBtn = document.getElementById('locateBtn');
-      locateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-      showToast('📍 Konumunuz alınıyor...', 'warning');
-
-      navigator.geolocation.getCurrentPosition(
-        function(position) {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          userLocation = { lat, lng };
-          
-          // Mersin koordinatları ile karşılaştır
-          const mersinLat = 36.8121;
-          const mersinLng = 34.6415;
-          
-          const distance = calculateDistance(lat, lng, mersinLat, mersinLng);
-          
-          locateBtn.innerHTML = '<i class="fas fa-location-arrow" style="color:#00f2fe"></i>';
-          
-          if (distance < 100) { // 100 km içinde
-            showToast(`📍 Mersin bölgesindesiniz! (${distance.toFixed(1)} km)`, 'success');
-            document.getElementById('nearMeCheck').checked = true;
-            renderPlaces();
-          } else {
-            showToast(`📍 Konum alındı (${distance.toFixed(1)} km uzakta)`, 'warning');
-          }
-        },
-        function(error) {
-          locateBtn.innerHTML = '<i class="fas fa-location-arrow"></i>';
-          let errorMsg = 'Konum alınamadı';
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              errorMsg = 'Konum izni reddedildi';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMsg = 'Konum bilgisi mevcut değil';
-              break;
-            case error.TIMEOUT:
-              errorMsg = 'Konum alma işlemi zaman aşımına uğradı';
-              break;
-          }
-          showToast('❌ ' + errorMsg, 'error');
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeApp();
+    });
+    
+    async function initializeApp() {
+      loadTheme();
+      await loadCategoriesFromFirebase();
+      loadFavorites();
+      populateDistrictSelect();
+      await loadPlaces();
+      console.log('✅ LemmOn hazır!');
+    }
+    
+    // Theme
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeIcon(savedTheme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+      showToast(`${newTheme === 'dark' ? '🌙' : '☀️'} Tema değişti`);
+    }
+    
+    function updateThemeIcon(theme) {
+      document.getElementById('theme-icon').textContent = theme === 'dark' ? '🌙' : '☀️';
+    }
+    
+    // Categories - Firebase'den yükleme
+    async function loadCategoriesFromFirebase() {
+      try {
+        const snapshot = await db.collection('categories').get();
+        if (!snapshot.empty) {
+          categories = [{ id: 'all', name: 'Tümü', icon: '🌟' }];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            categories.push({
+              id: data.id,
+              name: data.name,
+              icon: data.icon
+            });
+          });
+          console.log(`✅ ${categories.length} kategori yüklendi`);
         }
-      );
+      } catch (error) {
+        console.error('Kategori yükleme hatası:', error);
+      }
+      loadCategories();
     }
-
-    // İki koordinat arasındaki mesafeyi hesapla (km)
-    function calculateDistance(lat1, lng1, lat2, lng2) {
-      const R = 6371; // Dünya'nın yarıçapı (km)
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLng/2) * Math.sin(dLng/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
-    }
-
-    // 🏷️ DİNAMİK FİLTRELERİ DOLDUR
-    function populateFilters() {
-      const districtFilter = document.getElementById('districtFilter');
-      const categoryFilter = document.getElementById('categoryFilter');
-      
-      // Unique ilçeler ve kategoriler
-      const districts = [...new Set(places.map(p => p.district))].filter(Boolean).sort();
-      const categories = [...new Set(places.map(p => p.category))].filter(Boolean).sort();
-      
-      // İlçe filterını doldur
-      districtFilter.innerHTML = '<option value="">📍 Tüm İlçeler</option>';
-      districts.forEach(district => {
-        districtFilter.innerHTML += `<option value="${district}">📍 ${district}</option>`;
-      });
-      
-      // Kategori filterını doldur
-      categoryFilter.innerHTML = '<option value="">🏷️ Tüm Kategoriler</option>';
-      categories.forEach(category => {
-        const emoji = getCategoryEmoji(category);
-        categoryFilter.innerHTML += `<option value="${category}">${emoji} ${category}</option>`;
+    
+    function loadCategories() {
+      const container = document.getElementById('categories-container');
+      container.innerHTML = '';
+      categories.forEach(cat => {
+        const chip = document.createElement('span');
+        chip.className = 'category-chip';
+        if (cat.id === currentCategory) chip.classList.add('active');
+        chip.innerHTML = `${cat.icon} ${cat.name}`;
+        chip.onclick = () => selectCategory(cat.id);
+        container.appendChild(chip);
       });
     }
-
-    function getCategoryEmoji(category) {
-      const emojis = {
-        'Restaurant': '🍽️',
-        'Cafe': '☕',
-        'Fast Food': '🍔',
-        'Hotel': '🏨',
-        'Otel': '🏨',
-        'Market': '🛒',
-        'Alışveriş': '🛍️',
-        'Sağlık': '🏥',
-        'Eğlence': '🎉'
-      };
-      return emojis[category] || '🏪';
+    
+    function selectCategory(categoryId) {
+      currentCategory = categoryId;
+      loadCategories();
+      filterPlaces();
     }
-
-    // 🗺️ GOOGLE MAPS ENTEGRasyonu
-    function openGoogleMaps(name, address, district) {
-      const query = encodeURIComponent(`${name} ${address} ${district} Mersin`);
-      const url = `https://www.google.com/maps/search/${query}`;
-      window.open(url, '_blank');
-      showToast('🗺️ Google Maps açılıyor...', 'success');
-    }
-
-    // 🆘 Gelişmiş destek talebi gönderme
-    async function submitSupport() {
+    
+    // Yeni kategori ekleme
+    async function addNewCategory() {
+      const name = document.getElementById('new-category-name').value.trim();
+      const icon = document.getElementById('new-category-icon').value.trim();
+      const id = document.getElementById('new-category-id').value.trim();
+      
+      if (!name) { showToast('Kategori adı gerekli!', 'error'); return; }
+      if (!icon) { showToast('İkon gerekli!', 'error'); return; }
+      if (!id) { showToast('Kategori ID gerekli!', 'error'); return; }
+      
+      // ID kontrolü
+      if (categories.find(c => c.id === id)) {
+        showToast('Bu ID zaten kullanılıyor!', 'error');
+        return;
+      }
+      
       try {
-        const nameInput = document.getElementById('supportName');
-        const emailInput = document.getElementById('supportEmail');
-        const categoryInput = document.getElementById('supportCategory');
-        const subjectInput = document.getElementById('supportSubject');
-        const messageInput = document.getElementById('supportMessage');
-
-        const name = nameInput.value.trim();
-        const email = emailInput.value.trim();
-        const category = categoryInput.value;
-        const subject = subjectInput.value.trim();
-        const message = messageInput.value.trim();
-
-        // Reset error states
-        [nameInput, emailInput, categoryInput, subjectInput, messageInput].forEach(input => {
-          input.classList.remove('error-input');
-        });
-
-        // Validasyon kontrolleri
-        let hasError = false;
-
-        if (!name) {
-          nameInput.classList.add('error-input');
-          nameInput.focus();
-          showToast('⚠️ İsim ve soyisim zorunludur', 'error');
-          hasError = true;
-        }
-
-        if (!email) {
-          emailInput.classList.add('error-input');
-          if (!hasError) emailInput.focus();
-          showToast('⚠️ Email adresi zorunludur', 'error');
-          hasError = true;
-        } else if (!emailRegex.test(email)) {
-          emailInput.classList.add('error-input');
-          if (!hasError) emailInput.focus();
-          showToast('⚠️ Geçerli bir email adresi girin', 'error');
-          hasError = true;
-        }
-
-        if (!category) {
-          categoryInput.classList.add('error-input');
-          if (!hasError) categoryInput.focus();
-          showToast('⚠️ Konu kategorisi seçin', 'error');
-          hasError = true;
-        }
-
-        if (!subject) {
-          subjectInput.classList.add('error-input');
-          if (!hasError) subjectInput.focus();
-          showToast('⚠️ Konu başlığı yazın', 'error');
-          hasError = true;
-        }
-
-        if (!message) {
-          messageInput.classList.add('error-input');
-          if (!hasError) messageInput.focus();
-          showToast('⚠️ Mesajınızı yazın', 'error');
-          hasError = true;
-        }
-
-        if (hasError) return;
-
-        // Firebase'e gönder - chat koleksiyonu da oluştur
-        const supportData = {
-          name,
-          email,
-          category,
-          subject,
-          message,
-          createdAt: new Date().toISOString(),
-          status: 'open',
-          priority: category === 'technical' || category === 'bug' ? 'high' : 'normal',
-          chatId: 'chat_' + Date.now() // Chat ID oluştur
-        };
-
-        const docRef = await window.addDoc(window.collection(window.db, 'support'), supportData);
+        await db.collection('categories').add({ id, name, icon });
+        showToast('Kategori eklendi!', 'success');
         
-        // İlk chat mesajını oluştur
-        await window.addDoc(window.collection(window.db, 'chats'), {
-          supportId: docRef.id,
-          chatId: supportData.chatId,
-          sender: 'user',
-          senderName: name,
-          message: message,
-          timestamp: new Date().toISOString()
-        });
+        // Form temizle
+        document.getElementById('new-category-name').value = '';
+        document.getElementById('new-category-icon').value = '';
+        document.getElementById('new-category-id').value = '';
         
-        showToast('✅ Destek talebiniz gönderildi! Chat sistemi ile iletişime geçebilirsiniz.');
-        closeModal('supportModal');
-        
-        // Formu temizle
-        nameInput.value = '';
-        emailInput.value = '';
-        categoryInput.value = '';
-        subjectInput.value = '';
-        messageInput.value = '';
-        
+        // Kategorileri yeniden yükle
+        await loadCategoriesFromFirebase();
+        loadAdminCategoriesList();
       } catch (error) {
-        console.error('Destek hatası:', error);
-        showToast('❌ Gönderim hatası: ' + error.message, 'error');
+        console.error('Hata:', error);
+        showToast('Eklenemedi!', 'error');
       }
     }
-
-    // 💬 Chat sistemi - Chat açma
-    async function openSupportChat(supportId, supportData) {
-      currentChatId = supportData.chatId || 'chat_' + Date.now();
+    
+    // Admin kategoriler listesi
+    function loadAdminCategoriesList() {
+      const container = document.getElementById('admin-categories-list');
+      // "Tümü" kategorisini hariç tut
+      const userCategories = categories.filter(c => c.id !== 'all');
       
-      // Chat bilgilerini göster
-      document.getElementById('chatSubject').textContent = supportData.subject;
-      document.getElementById('chatUserInfo').textContent = `${supportData.name} (${supportData.email}) • ${supportData.category}`;
-      
-      // Chat'i aç
-      openModal('chatModal');
-      
-      // Mesajları yükle
-      await loadChatMessages(supportId);
-    }
-
-    // 💬 Chat mesajlarını yükleme
-    async function loadChatMessages(supportId) {
-      try {
-        const querySnapshot = await window.getDocs(window.collection(window.db, 'chats'));
-        const messages = [];
-        
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.supportId === supportId) {
-            messages.push({ id: doc.id, ...data });
-          }
-        });
-
-        // Zamana göre sırala
-        messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        chatMessages = messages;
-        
-        renderChatMessages();
-      } catch (error) {
-        console.error('Chat yükleme hatası:', error);
-        showToast('❌ Chat mesajları yüklenemedi', 'error');
+      if (userCategories.length === 0) {
+        container.innerHTML = '<div class="empty-state-text">Henüz kategori yok</div>';
+        return;
       }
-    }
-
-    // 💬 Chat mesajlarını render etme
-    function renderChatMessages() {
-      const chatContainer = document.getElementById('chatMessages');
       
-      if (chatMessages.length === 0) {
-        chatContainer.innerHTML = `
-          <div style="text-align:center;color:var(--text-muted);font-size:.9rem">
-            <i class="fas fa-comments"></i> Henüz mesaj yok
+      container.innerHTML = '';
+      userCategories.forEach(cat => {
+        const item = document.createElement('div');
+        item.className = 'admin-list-item';
+        item.innerHTML = `
+          <div>
+            <div style="font-weight: 700; margin-bottom: 6px; font-size: 15px;">${cat.icon} ${cat.name}</div>
+            <div style="font-size: 13px; color: var(--text-secondary);">ID: ${cat.id}</div>
+          </div>
+          <div class="admin-item-actions">
+            <button class="btn btn-secondary" onclick="deleteCategory('${cat.id}')" style="padding: 8px 14px; font-size: 13px;">🗑️</button>
           </div>
         `;
-        return;
-      }
-
-      chatContainer.innerHTML = chatMessages.map(msg => `
-        <div class="message ${msg.sender}">
-          <div class="message-bubble">
-            ${msg.message}
-          </div>
-          <div class="message-time">
-            ${msg.senderName || (msg.sender === 'admin' ? 'Admin' : 'Kullanıcı')} • ${new Date(msg.timestamp).toLocaleString('tr-TR')}
-          </div>
-        </div>
-      `).join('');
-      
-      // En alta scroll
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-
-    // 💬 Chat mesajı gönderme
-    async function sendChatMessage() {
-      const input = document.getElementById('chatMessageInput');
-      const message = input.value.trim();
-      
-      if (!message) {
-        showToast('⚠️ Mesaj yazın', 'error');
-        return;
-      }
-
-      if (!currentChatId) {
-        showToast('❌ Chat ID bulunamadı', 'error');
-        return;
-      }
-
-      try {
-        // Yeni mesaj ekle
-        await window.addDoc(window.collection(window.db, 'chats'), {
-          supportId: currentChatId.replace('chat_', ''), 
-          chatId: currentChatId,
-          sender: 'admin',
-          senderName: 'Admin',
-          message: message,
-          timestamp: new Date().toISOString()
-        });
-        
-        input.value = '';
-        
-        // Mesajları yeniden yükle
-        await loadChatMessages(currentChatId.replace('chat_', ''));
-        
-        showToast('✅ Mesaj gönderildi');
-      } catch (error) {
-        console.error('Mesaj gönderme hatası:', error);
-        showToast('❌ Mesaj gönderilemedi: ' + error.message, 'error');
-      }
-    }
-
-    // 🏪 Test mekanları ekleme
-    async function addSampleData() {
-      const samplePlaces = [
-        {name: 'Lezzet Restaurant', category: 'Restaurant', district: 'Akdeniz', address: 'Atatürk Caddesi No:123', phone: '0324 123 45 67', description: 'Geleneksel Türk mutfağı'},
-        {name: 'Coffee House', category: 'Cafe', district: 'Mezitli', address: 'Marina Bulvarı No:45', phone: '0324 234 56 78', description: 'Deniz manzaralı kahve keyfi'},
-        {name: 'Pizza Corner', category: 'Fast Food', district: 'Toroslar', address: 'Çankaya Mahallesi No:78', phone: '0324 345 67 89', description: 'Taze pizza ve hamburger'},
-        {name: 'Grand Hotel', category: 'Otel', district: 'Yenişehir', address: 'Cumhuriyet Bulvarı No:234', phone: '0324 456 78 90', description: 'Şehir merkezinde konforlu konaklama'},
-        {name: 'Fresh Market', category: 'Market', district: 'Erdemli', address: 'İnönü Caddesi No:56', phone: '0324 567 89 01', description: 'Taze meyve sebze ve günlük ihtiyaçlar'}
-      ];
-
-      try {
-        showToast('🔄 Test verileri ekleniyor...');
-        for (const place of samplePlaces) {
-          await window.addDoc(window.collection(window.db, 'places'), {
-            ...place,
-            createdAt: new Date().toISOString(),
-            isOpen: Math.random() > 0.3, // Random açık/kapalı
-            latitude: 36.8 + (Math.random() - 0.5) * 0.2,
-            longitude: 34.6 + (Math.random() - 0.5) * 0.2
-          });
-        }
-        showToast('✅ 5 test mekanı eklendi!');
-        await loadFromFirebase();
-        populateFilters();
-        renderPlaces();
-        loadAdminData();
-      } catch (error) {
-        showToast('❌ Ekleme hatası: ' + error.message, 'error');
-      }
-    }
-
-    // 🏪 Mekan ekleme
-    async function addPlace() {
-      const name = document.getElementById('f_name').value.trim();
-      const category = document.getElementById('f_category').value;
-      const district = document.getElementById('f_district').value;
-      const address = document.getElementById('f_address').value.trim();
-      const phone = document.getElementById('f_phone').value.trim();
-      const description = document.getElementById('f_description').value.trim();
-      const latitude = document.getElementById('f_latitude').value.trim();
-      const longitude = document.getElementById('f_longitude').value.trim();
-      const mapsLink = document.getElementById('f_maps_link').value.trim();
-
-
-      if (!name || !category || !district) {
-        showToast('⚠️ Ad, kategori ve ilçe zorunlu!', 'error');
-        return;
-      }
-
-      try {
-const placeData = {
-  name,
-  category,
-  district,
-  address: address || '',
-  phone: phone || '',
-  description: description || '',
-  // 🌐 YENİ KONUM BİLGİLERİ
-  latitude: latitude ? parseFloat(latitude) : null,
-  longitude: longitude ? parseFloat(longitude) : null,
-  mapsLink: mapsLink || '',
-  createdAt: new Date().toISOString(),
-  isOpen: true
-};
-
-        await window.addDoc(window.collection(window.db, 'places'), placeData);
-        showToast('✅ Mekan eklendi: ' + name);
-        
-        // Formu temizle
-        document.getElementById('f_name').value = '';
-        document.getElementById('f_category').value = '';
-        document.getElementById('f_district').value = '';
-        document.getElementById('f_address').value = '';
-        document.getElementById('f_phone').value = '';
-        document.getElementById('f_description').value = '';
-        
-        await loadFromFirebase();
-        populateFilters();
-        renderPlaces();
-        loadAdminData();
-      } catch (error) {
-        showToast('❌ Ekleme hatası: ' + error.message, 'error');
-      }
-    }
-
-    // 🗑️ Mekan silme
-    async function deletePlace(id) {
-      if (!confirm('Bu mekanı silmek istediğinizden emin misiniz?')) return;
-      
-      try {
-        await window.deleteDoc(window.doc(window.db, 'places', id));
-        showToast('✅ Mekan silindi');
-        await loadFromFirebase();
-        populateFilters();
-        renderPlaces();
-        loadAdminData();
-      } catch (error) {
-        showToast('❌ Silme hatası: ' + error.message, 'error');
-      }
-    }
-
-    // 🔄 Firebase'den veri yükleme
-    async function loadFromFirebase() {
-      try {
-        showToast('🔄 Veriler yükleniyor...');
-        const querySnapshot = await window.getDocs(window.collection(window.db, 'places'));
-        places = [];
-        querySnapshot.forEach((doc) => {
-          places.push({
-            id: doc.id,
-            ...doc.data()
-          });
-        });
-        localStorage.setItem('lemmon_places', JSON.stringify(places));
-        showToast(`✅ ${places.length} mekan yüklendi!`);
-      } catch (error) {
-        console.error('Yükleme hatası:', error);
-        showToast('❌ Yükleme hatası', 'error');
-        places = JSON.parse(localStorage.getItem('lemmon_places') || '[]');
-      }
-    }
-
-    // 🔄 Veri senkronizasyonu
-    async function syncFirebaseData() {
-      await loadFromFirebase();
-      populateFilters();
-      renderPlaces();
-      loadAdminData();
-    }
-
-    // 📋 Admin destek taleplerini yükleme
-    async function loadSupportRequests() {
-      try {
-        showToast('🔄 Destek talepleri yükleniyor...');
-        
-        const querySnapshot = await window.getDocs(window.collection(window.db, 'support'));
-        const requests = [];
-        
-        querySnapshot.forEach((doc) => {
-          requests.push({ id: doc.id, ...doc.data() });
-        });
-
-        // JavaScript ile sırala
-        requests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        
-        const supportList = document.getElementById('supportRequestsList');
-        const supportCount = document.getElementById('supportCount');
-        
-        if (supportCount) {
-          supportCount.textContent = requests.filter(r => r.status === 'open').length;
-        }
-        
-        if (requests.length === 0) {
-          supportList.innerHTML = '<p style="color:var(--text-muted);text-align:center">Henüz destek talebi yok</p>';
-          showToast('📋 Henüz destek talebi yok');
-          return;
-        }
-
-        supportList.innerHTML = requests.map(req => `
-          <div class="place-card" style="margin-bottom:1rem;padding:1rem;${req.status === 'open' ? 'border-left:4px solid var(--color-accent)' : 'opacity:0.7'}">
-            <div style="margin-bottom:1rem">
-              <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">
-                <h4 style="margin-bottom:.5rem">${req.subject}</h4>
-                <div style="display:flex;gap:.5rem;align-items:center">
-                  ${req.priority === 'high' ? '<span style="background:#ff6b6b;color:#fff;padding:.2rem .5rem;border-radius:10px;font-size:.7rem">🔥 ACİL</span>' : ''}
-                  <span style="background:var(--gradient-${req.status === 'open' ? 'warning' : 'success'});color:#fff;padding:.2rem .5rem;border-radius:10px;font-size:.7rem">
-                    ${req.status === 'open' ? '🔴 AÇIK' : '✅ KAPALI'}
-                  </span>
-                </div>
-              </div>
-              
-              <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:.5rem">
-                👤 ${req.name} | 📧 ${req.email} | 📋 ${req.category} | 📅 ${new Date(req.createdAt).toLocaleString('tr-TR')}
-              </div>
-              
-              <p style="font-size:.9rem;margin-bottom:.5rem;background:var(--bg-card);padding:.5rem;border-radius:8px">${req.message}</p>
-            </div>
-            
-            <div style="display:flex;gap:.5rem">
-              <button onclick="openSupportChat('${req.id}', ${JSON.stringify(req).replace(/"/g, '&quot;')})" class="btn btn-primary" style="flex:1;font-size:.8rem;padding:.5rem">
-                <i class="fas fa-comments"></i> Chat Aç
-              </button>
-              ${req.status === 'open' ? `
-                <button onclick="closeSupportRequest('${req.id}')" class="btn" style="background:var(--gradient-success);color:#fff;flex:1;font-size:.8rem;padding:.5rem">
-                  <i class="fas fa-check"></i> Çözüldü
-                </button>
-              ` : ''}
-            </div>
-          </div>
-        `).join('');
-        
-        showToast(`✅ ${requests.length} destek talebi yüklendi`);
-      } catch (error) {
-        console.error('Destek yükleme hatası:', error);
-        showToast('❌ Destek talepleri yüklenemedi: ' + error.message, 'error');
-      }
-    }
-
-    // 📋 Destek talebini kapatma
-    async function closeSupportRequest(id) {
-      if (!confirm('Bu destek talebini kapatmak istediğinizden emin misiniz?')) return;
-      
-      try {
-        await window.updateDoc(window.doc(window.db, 'support', id), {
-          status: 'closed',
-          closedAt: new Date().toISOString()
-        });
-        
-        showToast('✅ Destek talebi kapatıldı');
-        loadSupportRequests();
-      } catch (error) {
-        showToast('❌ Kapatma hatası: ' + error.message, 'error');
-      }
-    }
-
-    // 🎨 GELİŞMİŞ MEKAN GÖRÜNTÜLEME - Tüm Filtreler Aktif
-    function renderPlaces() {
-      const grid = document.getElementById('placesGrid');
-      const countBadge = document.getElementById('countBadge');
-      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-      const districtFilter = document.getElementById('districtFilter').value;
-      const categoryFilter = document.getElementById('categoryFilter').value;
-      const openOnlyCheck = document.getElementById('openOnlyCheck').checked;
-      const nearMeCheck = document.getElementById('nearMeCheck').checked;
-      
-      filteredPlaces = places.filter(p => {
-        // Arama terimi kontrolü
-        const matchesSearch = !searchTerm || 
-               p.name?.toLowerCase().includes(searchTerm) || 
-               p.category?.toLowerCase().includes(searchTerm) ||
-               p.district?.toLowerCase().includes(searchTerm) ||
-               p.description?.toLowerCase().includes(searchTerm);
-        
-        // İlçe kontrolü
-        const matchesDistrict = !districtFilter || p.district === districtFilter;
-        
-        // Kategori kontrolü  
-        const matchesCategory = !categoryFilter || p.category === categoryFilter;
-        
-        // Açık mekanlar kontrolü
-        const isOpen = !openOnlyCheck || p.isOpen || Math.random() > 0.3;
-        
-        // Yakınımdakiler kontrolü
-        let isNearby = true;
-        if (nearMeCheck && userLocation && p.latitude && p.longitude) {
-          const distance = calculateDistance(userLocation.lat, userLocation.lng, p.latitude, p.longitude);
-          isNearby = distance < 25; // 25 km içinde
-        } else if (nearMeCheck) {
-          isNearby = Math.random() > 0.4; // Random yakınlık
-        }
-        
-        return matchesSearch && matchesDistrict && matchesCategory && isOpen && isNearby;
+        container.appendChild(item);
       });
-
-      countBadge.textContent = filteredPlaces.length;
-
-      if (filteredPlaces.length === 0) {
-        grid.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">🍋</div>
-            <h3 class="empty-title">Filtrelere uygun mekan yok</h3>
-            <p class="empty-text">Arama kriterlerinizi değiştirmeyi deneyin</p>
-            <button class="btn btn-warning" onclick="clearAllFilters()">
-              <i class="fas fa-eraser"></i> Filtreleri Temizle
-            </button>
-          </div>`;
-        return;
-      }
-
-      grid.innerHTML = filteredPlaces.map(place => {
-        const favorites = JSON.parse(localStorage.getItem('lemmon_favorites') || '[]');
-        const isFavorite = favorites.includes(place.id);
-        const isOpen = place.isOpen !== false && Math.random() > 0.3;
+    }
+    
+    // Kategori silme
+    async function deleteCategory(categoryId) {
+      if (!confirm('Bu kategoriyi silmek istediğinizden emin misiniz?')) return;
+      
+      try {
+        // Firebase'den sil
+        const snapshot = await db.collection('categories').where('id', '==', categoryId).get();
+        snapshot.forEach(doc => doc.ref.delete());
         
-        return `
-        <div class="place-card">
-          <div class="place-header">
-            <div class="place-info">
-              <h3 class="place-title">${place.name}</h3>
-              <span class="place-category">${getCategoryEmoji(place.category)} ${place.category}</span>
-              <div class="place-district">
-                <i class="fas fa-map-marker-alt"></i> ${place.district}
-              </div>
-              ${place.description ? `<div class="place-meta" style="margin-top:.5rem;font-size:.9rem;color:var(--text-secondary)">${place.description}</div>` : ''}
-            </div>
-            <button class="favorite-btn ${isFavorite ? 'active' : ''}" onclick="toggleFavorite('${place.id}')">${isFavorite ? '❤️' : '🤍'}</button>
-          </div>
-          
-          <div class="place-meta">
-            <div class="status-badge ${isOpen ? 'status-open' : 'status-closed'}">
-              ${isOpen ? '🟢 Açık' : '🔴 Kapalı'}
-            </div>
-            ${userLocation && place.latitude && place.longitude ? `
-              <div class="status-badge" style="background:rgba(255,215,0,.2);color:var(--color-accent)">
-                📍 ${calculateDistance(userLocation.lat, userLocation.lng, place.latitude, place.longitude).toFixed(1)} km
-              </div>
-            ` : ''}
-          </div>
-          
-          ${place.address ? `<div class="place-meta" style="font-size:.9rem;color:var(--text-secondary);margin-top:1rem">
-            <i class="fas fa-map-pin"></i> ${place.address}
-          </div>` : ''}
-          
-          <div class="place-actions">
-            ${place.phone ? `<button class="btn action-btn action-call" onclick="window.open('tel:${place.phone}')">
-              <i class="fas fa-phone"></i> Ara
-            </button>` : ''}
-            ${place.address ? `<button class="btn action-btn action-route" onclick="openGoogleMaps('${place.name}', '${place.address}', '${place.district}')">
-              <i class="fas fa-route"></i> Yol Tarifi
-            </button>` : ''}
-            ${isAdminLoggedIn ? `<button class="btn action-btn" onclick="deletePlace('${place.id}')" style="background:var(--gradient-secondary)">
-              <i class="fas fa-trash"></i> Sil
-            </button>` : ''}
-          </div>
-        </div>
-      `}).join('');
+        showToast('Kategori silindi!', 'success');
+        
+        // Kategorileri yeniden yükle
+        await loadCategoriesFromFirebase();
+        loadAdminCategoriesList();
+      } catch (error) {
+        console.error('Hata:', error);
+        showToast('Silinemedi!', 'error');
+      }
     }
-
-    // Tüm filtreleri temizle
-    function clearAllFilters() {
-      document.getElementById('searchInput').value = '';
-      document.getElementById('districtFilter').value = '';
-      document.getElementById('categoryFilter').value = '';
-      document.getElementById('openOnlyCheck').checked = false;
-      document.getElementById('nearMeCheck').checked = false;
-      renderPlaces();
-      showToast('🗑️ Tüm filtreler temizlendi');
+    
+    // Districts
+    function populateDistrictSelect() {
+      const select = document.getElementById('place-district');
+      select.innerHTML = '<option value="">Seçiniz</option>';
+      districts.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        select.appendChild(opt);
+      });
     }
-
-    // ❤️ Favori sistemi
-    function toggleFavorite(id) {
-      const favorites = JSON.parse(localStorage.getItem('lemmon_favorites') || '[]');
-      const index = favorites.indexOf(id);
-      
-      if (index === -1) {
-        favorites.push(id);
-        showToast('❤️ Favorilere eklendi');
+    
+    function toggleFilter(type) {
+      if (type === 'district') {
+        showDistrictFilter();
+      } else if (type === 'price') {
+        showPriceFilter();
+      }
+    }
+    
+    function showDistrictFilter() {
+      const modal = document.getElementById('district-filter-modal');
+      const body = document.getElementById('district-filter-body');
+      body.innerHTML = `
+        <button class="btn btn-secondary" onclick="selectDistrictFilter('all')" style="width: 100%; margin-bottom: 12px;">
+          Tüm İlçeler
+        </button>
+      `;
+      districts.forEach(d => {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary';
+        btn.style.width = '100%';
+        btn.style.marginBottom = '12px';
+        btn.textContent = d;
+        btn.onclick = () => selectDistrictFilter(d);
+        body.appendChild(btn);
+      });
+      modal.classList.add('active');
+    }
+    
+    function closeDistrictFilterModal() {
+      document.getElementById('district-filter-modal').classList.remove('active');
+    }
+    
+    function selectDistrictFilter(district) {
+      currentDistrict = district;
+      const btn = document.getElementById('district-filter-btn');
+      if (district === 'all') {
+        btn.textContent = '📍 İlçe';
+        btn.classList.remove('active');
       } else {
-        favorites.splice(index, 1);
-        showToast('💔 Favorilerden çıkarıldı');
+        btn.textContent = '📍 ' + district;
+        btn.classList.add('active');
+      }
+      closeDistrictFilterModal();
+      filterPlaces();
+    }
+    
+    function showPriceFilter() {
+      document.getElementById('price-filter-modal').classList.add('active');
+    }
+    
+    function closePriceFilterModal() {
+      document.getElementById('price-filter-modal').classList.remove('active');
+    }
+    
+    function selectPriceFilter(price) {
+      currentPrice = price;
+      const btn = document.getElementById('price-filter-btn');
+      if (price === 'all') {
+        btn.textContent = '💰 Fiyat';
+        btn.classList.remove('active');
+      } else {
+        btn.textContent = '💰 ' + price;
+        btn.classList.add('active');
+      }
+      closePriceFilterModal();
+      filterPlaces();
+    }
+    
+    // Places
+    async function loadPlaces() {
+      try {
+        const snapshot = await db.collection('places').get();
+        allPlaces = [];
+        snapshot.forEach(doc => {
+          allPlaces.push({ id: doc.id, ...doc.data() });
+        });
+        console.log(`📍 ${allPlaces.length} mekan yüklendi`);
+        filterPlaces();
+      } catch (error) {
+        console.error('❌ Hata:', error);
+        showToast('Mekanlar yüklenemedi!', 'error');
+        showEmptyState('Hata oluştu 😞');
+      }
+    }
+    
+    function filterPlaces() {
+      filteredPlaces = [...allPlaces];
+      
+      // Category filter
+      if (currentCategory !== 'all') {
+        filteredPlaces = filteredPlaces.filter(p => p.category === currentCategory);
       }
       
-      localStorage.setItem('lemmon_favorites', JSON.stringify(favorites));
-      renderPlaces();
+      // District filter
+      if (currentDistrict !== 'all') {
+        filteredPlaces = filteredPlaces.filter(p => p.district === currentDistrict);
+      }
+      
+      // Price filter
+      if (currentPrice !== 'all') {
+        filteredPlaces = filteredPlaces.filter(p => p.priceRange === currentPrice);
+      }
+      
+      // Search filter
+      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+      if (searchTerm) {
+        filteredPlaces = filteredPlaces.filter(p => 
+          p.name.toLowerCase().includes(searchTerm) ||
+          (p.address && p.address.toLowerCase().includes(searchTerm)) ||
+          (p.description && p.description.toLowerCase().includes(searchTerm))
+        );
+      }
+      
+      displayPlaces();
     }
-
-    // 👑 Admin panel verilerini yükleme
-    function loadAdminData() {
-      const adminList = document.getElementById('adminPlacesList');
-      const adminCount = document.getElementById('adminCount');
-      
-      if (adminCount) adminCount.textContent = places.length;
-      
-      if (places.length === 0) {
-        adminList.innerHTML = '<p style="text-align:center;color:var(--text-muted)">Henüz mekan yok</p>';
+    
+    function displayPlaces() {
+      const container = document.getElementById('main-content');
+      if (filteredPlaces.length === 0) {
+        showEmptyState('Mekan bulunamadı 🔍');
         return;
       }
-
-      adminList.innerHTML = places.map(place => `
-        <div style="background:var(--bg-card);padding:1rem;margin:1rem 0;border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+      container.innerHTML = '';
+      filteredPlaces.forEach(place => {
+        container.appendChild(createPlaceCard(place));
+      });
+    }
+    
+    function createPlaceCard(place) {
+      const card = document.createElement('div');
+      card.className = 'place-card';
+      card.onclick = () => showPlaceDetail(place);
+      
+      const categoryInfo = categories.find(c => c.id === place.category) || { icon: '📌', name: 'Diğer' };
+      const isFav = isFavorite(place.id);
+      const status = getPlaceStatus(place);
+      
+      card.innerHTML = `
+        <div class="place-header">
           <div>
-            <h4>${place.name}</h4>
-            <p style="font-size:.9rem;color:var(--text-secondary)">${getCategoryEmoji(place.category)} ${place.category} • 📍 ${place.district}</p>
-            ${place.description ? `<p style="font-size:.8rem;color:var(--text-muted);margin-top:.5rem">${place.description}</p>` : ''}
+            <div class="place-name">${escapeHtml(place.name)}</div>
+            <div class="place-meta">
+              <span class="place-category">${categoryInfo.icon} ${categoryInfo.name}</span>
+              ${place.district ? `<span class="place-district">📍 ${place.district}</span>` : ''}
+              ${place.priceRange ? `<span class="place-price">${place.priceRange}</span>` : ''}
+            </div>
           </div>
-          <button onclick="deletePlace('${place.id}')" class="btn" style="background:var(--gradient-secondary);color:#fff;padding:.5rem 1rem">
-            <i class="fas fa-trash"></i>
+          <button class="favorite-btn" onclick="event.stopPropagation(); toggleFavorite('${place.id}')">
+            ${isFav ? '❤️' : '🤍'}
           </button>
         </div>
-      `).join('');
+        ${place.address ? `<div class="place-address"><span style="opacity: 0.6;">📍</span> ${escapeHtml(place.address)}</div>` : ''}
+        ${status ? `<div class="place-status ${status.class}">${status.icon} ${status.text}</div>` : ''}
+      `;
+      return card;
     }
-
-    // 📱 Favoriler gösterme
-    function showFavorites() {
-      const favorites = JSON.parse(localStorage.getItem('lemmon_favorites') || '[]');
-      const favoritePlaces = places.filter(p => favorites.includes(p.id));
-      const favoritesList = document.getElementById('favoritesList');
+    
+    // Detail
+    function showPlaceDetail(place) {
+      currentDetailPlace = place;
+      const modal = document.getElementById('detail-modal');
+      const nameEl = document.getElementById('detail-name');
+      const bodyEl = document.getElementById('detail-body');
       
-      closeModal('menuModal');
+      const categoryInfo = categories.find(c => c.id === place.category) || { icon: '📌', name: 'Diğer' };
+      const status = getPlaceStatus(place);
+      const isFav = isFavorite(place.id);
       
-      if (favoritePlaces.length === 0) {
-        favoritesList.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">💔</div>
-            <h3 class="empty-title">Henüz favori mekan yok</h3>
-            <p class="empty-text">Beğendiğiniz mekanları ❤️ ile favorilere ekleyin</p>
-          </div>`;
-      } else {
-        favoritesList.innerHTML = favoritePlaces.map(place => `
-          <div class="place-card" style="margin-bottom:1rem">
-            <div style="display:flex;justify-content:space-between;align-items:start">
-              <div>
-                <h4>${place.name}</h4>
-                <p style="color:var(--text-secondary)">${getCategoryEmoji(place.category)} ${place.category} • 📍 ${place.district}</p>
-                ${place.description ? `<p style="font-size:.9rem;color:var(--text-muted);margin-top:.5rem">${place.description}</p>` : ''}
-              </div>
-              <button onclick="toggleFavorite('${place.id}')" class="btn btn-secondary" style="padding:.5rem">
-                <i class="fas fa-heart-broken"></i>
-              </button>
-            </div>
-            ${place.phone ? `
-            <div style="margin-top:1rem">
-              <button class="btn action-btn action-call" onclick="window.open('tel:${place.phone}')" style="width:100%">
-                <i class="fas fa-phone"></i> ${place.phone}
-              </button>
-            </div>
-            ` : ''}
+      nameEl.textContent = place.name;
+      
+      bodyEl.innerHTML = `
+        <div class="detail-section">
+          <div class="detail-label">KATEGORİ</div>
+          <div class="detail-value">${categoryInfo.icon} ${categoryInfo.name}</div>
+        </div>
+        ${place.district ? `
+          <div class="detail-section">
+            <div class="detail-label">İLÇE</div>
+            <div class="detail-value">📍 ${place.district}</div>
           </div>
-        `).join('');
+        ` : ''}
+        ${place.priceRange ? `
+          <div class="detail-section">
+            <div class="detail-label">FİYAT ARALIĞI</div>
+            <div class="detail-value">💰 ${place.priceRange}</div>
+          </div>
+        ` : ''}
+        ${place.address ? `
+          <div class="detail-section">
+            <div class="detail-label">ADRES</div>
+            <div class="detail-value">📍 ${escapeHtml(place.address)}</div>
+          </div>
+        ` : ''}
+        ${place.phone ? `
+          <div class="detail-section">
+            <div class="detail-label">TELEFON</div>
+            <div class="detail-value">📞 ${escapeHtml(place.phone)}</div>
+          </div>
+        ` : ''}
+        ${place.openTime && place.closeTime ? `
+          <div class="detail-section">
+            <div class="detail-label">ÇALIŞMA SAATLERİ</div>
+            <div class="detail-value">🕐 ${place.openTime} - ${place.closeTime}</div>
+            ${status ? `<div class="place-status ${status.class}" style="margin-top: 12px;">${status.icon} ${status.text}</div>` : ''}
+          </div>
+        ` : ''}
+        ${place.description ? `
+          <div class="detail-section">
+            <div class="detail-label">AÇIKLAMA</div>
+            <div class="detail-value">${escapeHtml(place.description)}</div>
+          </div>
+        ` : ''}
+        <div class="action-buttons">
+          <button class="btn btn-secondary" onclick="toggleFavoriteFromDetail()">
+            ${isFav ? '💔' : '❤️'} ${isFav ? 'Çıkar' : 'Favoriye Ekle'}
+          </button>
+          ${place.latitude && place.longitude ? `
+            <button class="btn btn-primary" onclick="openInMaps()">
+              🗺️ Haritada Aç
+            </button>
+          ` : ''}
+          ${place.phone ? `
+            <button class="btn btn-secondary" onclick="callPlace()">
+              📞 Ara
+            </button>
+          ` : ''}
+          <button class="btn btn-secondary" onclick="sharePlace()">
+            🔗 Paylaş
+          </button>
+        </div>
+      `;
+      
+      modal.classList.add('active');
+    }
+    
+    function closeDetailModal() {
+      document.getElementById('detail-modal').classList.remove('active');
+      currentDetailPlace = null;
+    }
+    
+    function toggleFavoriteFromDetail() {
+      if (currentDetailPlace) {
+        toggleFavorite(currentDetailPlace.id);
+        showPlaceDetail(currentDetailPlace);
+      }
+    }
+    
+    function openInMaps() {
+      if (currentDetailPlace && currentDetailPlace.latitude && currentDetailPlace.longitude) {
+        window.open(`https://www.google.com/maps?q=${currentDetailPlace.latitude},${currentDetailPlace.longitude}`, '_blank');
+      }
+    }
+    
+    function callPlace() {
+      if (currentDetailPlace && currentDetailPlace.phone) {
+        window.location.href = `tel:${currentDetailPlace.phone}`;
+      }
+    }
+    
+    function sharePlace() {
+      if (currentDetailPlace) {
+        const text = `${currentDetailPlace.name} - LemmOn Mersin`;
+        if (navigator.share) {
+          navigator.share({ title: text, url: window.location.href }).catch(() => {});
+        } else {
+          navigator.clipboard.writeText(window.location.href)
+            .then(() => showToast('Link kopyalandı!', 'success'))
+            .catch(() => showToast('Kopyalanamadı', 'error'));
+        }
+      }
+    }
+    
+    // Favorites
+    function loadFavorites() {
+      const saved = localStorage.getItem('favorites');
+      favorites = saved ? JSON.parse(saved) : [];
+    }
+    
+    function saveFavoritesToStorage() {
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+    
+    function isFavorite(placeId) {
+      return favorites.includes(placeId);
+    }
+    
+    function toggleFavorite(placeId) {
+      if (isFavorite(placeId)) {
+        favorites = favorites.filter(id => id !== placeId);
+        showToast('Favorilerden çıkarıldı', 'success');
+      } else {
+        favorites.push(placeId);
+        showToast('Favorilere eklendi!', 'success');
+      }
+      saveFavoritesToStorage();
+      filterPlaces();
+    }
+    
+    function showFavorites() {
+      const modal = document.getElementById('favorites-modal');
+      const body = document.getElementById('favorites-body');
+      if (favorites.length === 0) {
+        body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❤️</div><div class="empty-state-text">Henüz favori mekan yok</div></div>';
+      } else {
+        const favPlaces = allPlaces.filter(p => favorites.includes(p.id));
+        body.innerHTML = '';
+        favPlaces.forEach(place => {
+          body.appendChild(createPlaceCard(place));
+        });
+      }
+      modal.classList.add('active');
+    }
+    
+    function closeFavoritesModal() {
+      document.getElementById('favorites-modal').classList.remove('active');
+    }
+    
+    // Search
+    function handleSearch() {
+      filterPlaces();
+    }
+    
+    // Menu
+    function showMenu() {
+      document.getElementById('menu-modal').classList.add('active');
+    }
+    
+    function closeMenuModal() {
+      document.getElementById('menu-modal').classList.remove('active');
+    }
+    
+    async function showAbout() {
+      closeMenuModal();
+      const modal = document.getElementById('about-modal');
+      const body = document.getElementById('about-modal-body');
+      
+      // Firebase'den çek
+      const aboutData = await loadAboutDataForDisplay();
+      
+      body.innerHTML = `
+        <div style="text-align: center; padding: 20px 0;">
+          <div style="font-size: 80px; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(255,229,0,.4));">🍋</div>
+          <h2 style="margin-bottom: 12px; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">${escapeHtml(aboutData.title)}</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 16px;">${escapeHtml(aboutData.subtitle)}</p>
+          <p style="font-size: 15px; line-height: 1.7; color: var(--text-secondary);">
+            ${escapeHtml(aboutData.description)}
+          </p>
+          <p style="margin-top: 32px; font-size: 13px; color: var(--text-tertiary); font-weight: 600;">
+            ${escapeHtml(aboutData.version)}
+          </p>
+        </div>
+      `;
+      
+      modal.classList.add('active');
+    }
+    
+    function closeAboutModal() {
+      document.getElementById('about-modal').classList.remove('active');
+    }
+    
+    async function loadAboutDataForDisplay() {
+      try {
+        const doc = await db.collection('settings').doc('about').get();
+        if (doc.exists) {
+          return doc.data();
+        }
+      } catch (error) {
+        console.error('Hata:', error);
       }
       
-      openModal('favoritesModal');
+      // Default değerler
+      return {
+        title: 'LemmOn Mersin',
+        subtitle: 'Mersin Şehir Rehberi',
+        description: 'Mersin\'deki en iyi mekanları keşfet! Cafeler, restoranlar, alışveriş merkezleri ve daha fazlası...',
+        version: 'V2.0 • 2025'
+      };
     }
-
-    // ℹ️ Hakkımda gösterme
-    function showAbout() {
-      closeModal('menuModal');
-      openModal('aboutModal');
-    }
-
-    // 🔐 Admin sistemi
-    function handleBrandClick() {
-      brandClickCount++;
-      const counter = document.getElementById('tapCounter');
-      counter.textContent = brandClickCount;
-      counter.style.display = 'flex';
+    
+    // Pharmacies
+    async function showPharmacies() {
+      closeMenuModal();
+      const modal = document.getElementById('pharmacies-modal');
+      const body = document.getElementById('pharmacies-body');
+      modal.classList.add('active');
       
-      if (brandClickCount >= 10) {
-        openModal('passwordModal');
-        resetBrandCounter();
+      try {
+        const snapshot = await db.collection('pharmacies').orderBy('weekStart', 'desc').limit(1).get();
+        
+        if (snapshot.empty) {
+          body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏥</div><div class="empty-state-text">Henüz nöbetçi eczane eklenmemiş</div></div>';
+          return;
+        }
+        
+        const weekData = snapshot.docs[0].data();
+        const today = new Date().getDay(); // 0=Pazar, 1=Pazartesi
+        const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const todayKey = dayKeys[today];
+        
+        body.innerHTML = '<h3 style="margin-bottom: 20px; font-weight: 800;">Bu Hafta</h3>';
+        
+        dayKeys.forEach((key, index) => {
+          const dayData = weekData[key];
+          if (dayData && dayData.name) {
+            const isToday = key === todayKey;
+            const card = document.createElement('div');
+            card.className = 'place-card pharmacy-card';
+            card.style.cursor = 'default';
+            card.innerHTML = `
+              <div class="place-name" style="${isToday ? 'color: var(--accent-green);' : ''}">${escapeHtml(dayData.name)}</div>
+              <div class="pharmacy-day">${dayNames[key]}</div>
+              ${dayData.address ? `<div class="place-address">📍 ${escapeHtml(dayData.address)}</div>` : ''}
+              ${dayData.phone ? `<div style="margin-top: 8px; color: var(--text-secondary);">📞 ${escapeHtml(dayData.phone)}</div>` : ''}
+            `;
+            body.appendChild(card);
+          }
+        });
+        
+      } catch (error) {
+        console.error('Eczane hatası:', error);
+        body.innerHTML = '<div class="empty-state-text">Yüklenirken hata oluştu</div>';
+      }
+    }
+    
+    function closePharmaciesModal() {
+      document.getElementById('pharmacies-modal').classList.remove('active');
+    }
+    
+    // Support
+    function showSupport() {
+      closeMenuModal();
+      document.getElementById('support-modal').classList.add('active');
+      setTimeout(() => document.getElementById('support-name').focus(), 100);
+    }
+    
+    function closeSupportModal() {
+      document.getElementById('support-modal').classList.remove('active');
+    }
+    
+    async function submitSupport() {
+      const name = document.getElementById('support-name').value.trim();
+      const email = document.getElementById('support-email').value.trim();
+      const subject = document.getElementById('support-subject').value.trim();
+      const message = document.getElementById('support-message').value.trim();
+      
+      if (!name) { showToast('İsim soyisim gerekli!', 'error'); return; }
+      if (!email) { showToast('Email gerekli!', 'error'); return; }
+      if (!email.includes('@') || !email.includes('.')) {
+        showToast('Geçerli bir email girin!', 'error');
+        return;
+      }
+      if (!subject) { showToast('Konu gerekli!', 'error'); return; }
+      if (!message) { showToast('Mesaj gerekli!', 'error'); return; }
+      
+      try {
+        await db.collection('support').add({
+          name,
+          email,
+          subject,
+          message,
+          status: 'pending',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        showToast('Talebiniz gönderildi!', 'success');
+        closeSupportModal();
+        
+        // Clear form
+        document.getElementById('support-name').value = '';
+        document.getElementById('support-email').value = '';
+        document.getElementById('support-subject').value = '';
+        document.getElementById('support-message').value = '';
+      } catch (error) {
+        console.error('Hata:', error);
+        showToast('Gönderilemedi!', 'error');
+      }
+    }
+    
+    // Admin
+    function showAdminLogin() {
+      document.getElementById('admin-pin-modal').classList.add('active');
+      setTimeout(() => document.getElementById('admin-pin-input').focus(), 100);
+    }
+    
+    function closeAdminPinModal() {
+      document.getElementById('admin-pin-modal').classList.remove('active');
+      document.getElementById('admin-pin-input').value = '';
+    }
+    
+    function checkAdminPin() {
+      const pin = document.getElementById('admin-pin-input').value;
+      if (pin === '1234') {
+        isAdminMode = true;
+        closeAdminPinModal();
+        openAdminPanel();
+        showToast('Admin girişi yapıldı!', 'success');
+      } else {
+        showToast('Hatalı PIN!', 'error');
+        document.getElementById('admin-pin-input').value = '';
+      }
+    }
+    
+    function openAdminPanel() {
+      document.getElementById('admin-panel').classList.add('active');
+      switchAdminTab('places');
+    }
+    
+    function closeAdminPanel() {
+      document.getElementById('admin-panel').classList.remove('active');
+    }
+    
+    function switchAdminTab(tab) {
+      currentAdminTab = tab;
+      
+      // Update tabs
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.admin-tab-content').forEach(t => t.classList.remove('active'));
+      
+      const tabButtons = document.querySelectorAll('.admin-tab');
+      const tabMap = { 'places': 0, 'categories': 1, 'pharmacies': 2, 'support': 3, 'settings': 4 };
+      tabButtons[tabMap[tab]].classList.add('active');
+      
+      document.getElementById(`admin-${tab}-tab`).classList.add('active');
+      
+      // Load data
+      if (tab === 'places') {
+        loadAdminPlacesList();
+      } else if (tab === 'categories') {
+        loadAdminCategoriesList();
+      } else if (tab === 'pharmacies') {
+        loadAdminPharmaciesList();
+      } else if (tab === 'support') {
+        loadAdminSupportList();
+      } else if (tab === 'settings') {
+        loadAboutData();
+      }
+    }
+    
+    function loadAdminPlacesList() {
+      const container = document.getElementById('admin-places-list');
+      if (allPlaces.length === 0) {
+        container.innerHTML = '<div class="empty-state-text">Henüz mekan yok</div>';
+        return;
+      }
+      container.innerHTML = '';
+      allPlaces.forEach(place => {
+        const item = document.createElement('div');
+        item.className = 'admin-list-item';
+        const categoryInfo = categories.find(c => c.id === place.category) || { icon: '📌' };
+        item.innerHTML = `
+          <div>
+            <div style="font-weight: 700; margin-bottom: 6px; font-size: 15px;">${categoryInfo.icon} ${escapeHtml(place.name)}</div>
+            <div style="font-size: 13px; color: var(--text-secondary);">${place.district || 'İlçe yok'} • ${place.address || 'Adres yok'}</div>
+          </div>
+          <div class="admin-item-actions">
+            <button class="btn btn-secondary" onclick="editPlace('${place.id}')" style="padding: 8px 14px; font-size: 13px;">✏️</button>
+            <button class="btn btn-secondary" onclick="deletePlace('${place.id}')" style="padding: 8px 14px; font-size: 13px;">🗑️</button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+    
+    async function loadAdminPharmaciesList() {
+      const container = document.getElementById('admin-pharmacies-list');
+      try {
+        const snapshot = await db.collection('pharmacies').orderBy('weekStart', 'desc').get();
+        if (snapshot.empty) {
+          container.innerHTML = '<div class="empty-state-text">Henüz hafta eklenmemiş</div>';
+          return;
+        }
+        container.innerHTML = '';
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const item = document.createElement('div');
+          item.className = 'admin-list-item';
+          item.innerHTML = `
+            <div>
+              <div style="font-weight: 700; margin-bottom: 6px;">🏥 Hafta: ${data.weekStart}</div>
+              <div style="font-size: 13px; color: var(--text-secondary);">7 eczane kaydı</div>
+            </div>
+            <div class="admin-item-actions">
+              <button class="btn btn-secondary" onclick="deletePharmacyWeek('${doc.id}')" style="padding: 8px 14px; font-size: 13px;">🗑️</button>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      } catch (error) {
+        console.error('Hata:', error);
+        container.innerHTML = '<div class="empty-state-text">Yüklenemedi</div>';
+      }
+    }
+    
+    async function loadAdminSupportList() {
+      const container = document.getElementById('admin-support-list');
+      try {
+        const snapshot = await db.collection('support').orderBy('createdAt', 'desc').get();
+        if (snapshot.empty) {
+          container.innerHTML = '<div class="empty-state-text">Henüz talep yok</div>';
+          return;
+        }
+        container.innerHTML = '';
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const item = document.createElement('div');
+          item.className = 'admin-list-item';
+          item.style.display = 'block';
+          item.innerHTML = `
+            <div style="margin-bottom: 12px;">
+              <div style="font-weight: 700; margin-bottom: 6px;">${escapeHtml(data.name)}</div>
+              <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">📧 ${escapeHtml(data.email)}</div>
+              <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">📌 ${escapeHtml(data.subject)}</div>
+              <div style="font-size: 14px; margin-top: 8px;">${escapeHtml(data.message)}</div>
+            </div>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+              <button class="btn btn-secondary" onclick="deleteSupportTicket('${doc.id}')" style="padding: 6px 12px; font-size: 13px;">🗑️ Sil</button>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      } catch (error) {
+        console.error('Hata:', error);
+        container.innerHTML = '<div class="empty-state-text">Yüklenemedi</div>';
+      }
+    }
+    
+    async function loadAboutData() {
+      try {
+        const doc = await db.collection('settings').doc('about').get();
+        if (doc.exists) {
+          const data = doc.data();
+          document.getElementById('about-title').value = data.title || 'LemmOn Mersin';
+          document.getElementById('about-subtitle').value = data.subtitle || 'Mersin Şehir Rehberi';
+          document.getElementById('about-description').value = data.description || '';
+          document.getElementById('about-version').value = data.version || 'V2.0 • 2025';
+        } else {
+          // Set defaults
+          document.getElementById('about-title').value = 'LemmOn Mersin';
+          document.getElementById('about-subtitle').value = 'Mersin Şehir Rehberi';
+          document.getElementById('about-description').value = 'Mersin\'deki en iyi mekanları keşfet! Cafeler, restoranlar, alışveriş merkezleri ve daha fazlası...';
+          document.getElementById('about-version').value = 'V2.0 • 2025';
+        }
+      } catch (error) {
+        console.error('Hakkımda yüklenemedi:', error);
+      }
+    }
+    
+    async function saveAboutData() {
+      const title = document.getElementById('about-title').value.trim();
+      const subtitle = document.getElementById('about-subtitle').value.trim();
+      const description = document.getElementById('about-description').value.trim();
+      const version = document.getElementById('about-version').value.trim();
+      
+      if (!title) { showToast('Başlık gerekli!', 'error'); return; }
+      if (!subtitle) { showToast('Alt başlık gerekli!', 'error'); return; }
+      if (!description) { showToast('Açıklama gerekli!', 'error'); return; }
+      
+      try {
+        await db.collection('settings').doc('about').set({
+          title,
+          subtitle,
+          description,
+          version,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast('Hakkımda güncellendi!', 'success');
+      } catch (error) {
+        console.error('Hata:', error);
+        showToast('Kaydedilemedi!', 'error');
+      }
+    }
+    
+    function resetPlaceForm() {
+      document.getElementById('edit-place-id').value = '';
+      document.getElementById('place-name').value = '';
+      document.getElementById('place-category').value = '';
+      document.getElementById('place-district').value = '';
+      document.getElementById('place-price').value = '';
+      document.getElementById('place-address').value = '';
+      document.getElementById('place-phone').value = '';
+      document.getElementById('place-lat').value = '';
+      document.getElementById('place-lng').value = '';
+      document.getElementById('place-open').value = '09:00';
+      document.getElementById('place-close').value = '22:00';
+      document.getElementById('place-description').value = '';
+    }
+    
+    function editPlace(placeId) {
+      const place = allPlaces.find(p => p.id === placeId);
+      if (!place) return;
+      document.getElementById('edit-place-id').value = place.id;
+      document.getElementById('place-name').value = place.name || '';
+      document.getElementById('place-category').value = place.category || '';
+      document.getElementById('place-district').value = place.district || '';
+      document.getElementById('place-price').value = place.priceRange || '';
+      document.getElementById('place-address').value = place.address || '';
+      document.getElementById('place-phone').value = place.phone || '';
+      document.getElementById('place-lat').value = place.latitude || '';
+      document.getElementById('place-lng').value = place.longitude || '';
+      document.getElementById('place-open').value = place.openTime || '09:00';
+      document.getElementById('place-close').value = place.closeTime || '22:00';
+      document.getElementById('place-description').value = place.description || '';
+      document.getElementById('place-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showToast('Düzenleme modunda', 'success');
+    }
+    
+    async function deletePlace(placeId) {
+      if (!confirm('Bu mekanı silmek istediğinizden emin misiniz?')) return;
+      try {
+        await db.collection('places').doc(placeId).delete();
+        showToast('Mekan silindi!', 'success');
+        await loadPlaces();
+        loadAdminPlacesList();
+      } catch (error) {
+        console.error('Hata:', error);
+        showToast('Silinemedi!', 'error');
+      }
+    }
+    
+    async function savePlaceData() {
+      const placeId = document.getElementById('edit-place-id').value;
+      const name = document.getElementById('place-name').value.trim();
+      const category = document.getElementById('place-category').value;
+      const district = document.getElementById('place-district').value;
+      const priceRange = document.getElementById('place-price').value;
+      const address = document.getElementById('place-address').value.trim();
+      const phone = document.getElementById('place-phone').value.trim();
+      const lat = document.getElementById('place-lat').value;
+      const lng = document.getElementById('place-lng').value;
+      const openTime = document.getElementById('place-open').value;
+      const closeTime = document.getElementById('place-close').value;
+      const description = document.getElementById('place-description').value.trim();
+      
+      if (!name) { showToast('Mekan adı gerekli!', 'error'); return; }
+      if (!category) { showToast('Kategori seçiniz!', 'error'); return; }
+      if (!district) { showToast('İlçe seçiniz!', 'error'); return; }
+      if (!address) { showToast('Adres gerekli!', 'error'); return; }
+      
+      const placeData = {
+        name, category, district, priceRange, address, phone,
+        latitude: lat ? parseFloat(lat) : null,
+        longitude: lng ? parseFloat(lng) : null,
+        openTime, closeTime, description,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      
+      try {
+        if (placeId) {
+          await db.collection('places').doc(placeId).update(placeData);
+          showToast('Güncellendi!', 'success');
+        } else {
+          placeData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection('places').add(placeData);
+          showToast('Eklendi!', 'success');
+        }
+        resetPlaceForm();
+        await loadPlaces();
+        loadAdminPlacesList();
+      } catch (error) {
+        console.error('Hata:', error);
+        showToast('Kaydedilemedi!', 'error');
+      }
+    }
+    
+    async function saveWeeklyPharmacies() {
+      const weekStart = document.getElementById('pharmacy-week-start').value;
+      if (!weekStart) {
+        showToast('Hafta başlangıç tarihi seçiniz!', 'error');
         return;
       }
       
-      clearTimeout(brandClickTimer);
-      brandClickTimer = setTimeout(resetBrandCounter, 3000);
-    }
-
-    function resetBrandCounter() {
-      brandClickCount = 0;
-      document.getElementById('tapCounter').style.display = 'none';
-      clearTimeout(brandClickTimer);
-    }
-
-    function checkPassword() {
-      const password = document.getElementById('passwordInput').value;
-      if (password === '109168') {
-        isAdminLoggedIn = true;
-        closeModal('passwordModal');
-        openModal('adminModal');
-        showToast('🔓 Admin paneline hoş geldiniz!');
-        loadAdminData();
-        loadSupportRequests();
-        document.getElementById('passwordInput').value = '';
-      } else {
-        showToast('❌ Yanlış şifre!', 'error');
-        document.getElementById('passwordInput').value = '';
-        document.getElementById('passwordInput').style.animation = 'shake 0.5s';
-        setTimeout(() => {
-          document.getElementById('passwordInput').style.animation = '';
-        }, 500);
-      }
-    }
-
-    // 🌍 Dil değiştirme
-    function handleLanguageChange() {
-      const select = document.getElementById('langSelect');
-      const url = select.value;
-      if (url) {
-        showToast('🌍 Yönlendiriliyor...');
-        setTimeout(() => window.open(url, '_blank'), 1000);
-        setTimeout(() => select.value = '', 1500);
-      }
-    }
-
-    // 🌙 Event Listeners
-    document.addEventListener('DOMContentLoaded', function() {
-      // Tema değiştirme
-      document.getElementById('themeBtn').addEventListener('click', function() {
-        const body = document.body;
-        const icon = this.querySelector('i');
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      const weekData = { weekStart };
+      
+      let hasData = false;
+      days.forEach(day => {
+        const name = document.getElementById(`pharmacy-${day}-name`).value.trim();
+        const address = document.getElementById(`pharmacy-${day}-address`).value.trim();
+        const phone = document.getElementById(`pharmacy-${day}-phone`).value.trim();
         
-        if (body.hasAttribute('data-theme')) {
-          body.removeAttribute('data-theme');
-          icon.className = 'fas fa-moon';
-          showToast('🌙 Karanlık tema');
-        } else {
-          body.setAttribute('data-theme', 'light');
-          icon.className = 'fas fa-sun';
-          showToast('☀️ Açık tema');
-        }
-      });
-
-      // Menü gösterme
-      document.getElementById('menuBtn').addEventListener('click', function() {
-        openModal('menuModal');
-      });
-
-      // AKTIF SERVİSLER - Event Listeners
-      document.getElementById('micBtn').addEventListener('click', startVoiceSearch);
-      document.getElementById('locateBtn').addEventListener('click', getUserLocation);
-      
-      // Arama ve filtreler
-      document.getElementById('searchInput').addEventListener('input', function() {
-        clearTimeout(this.searchTimeout);
-        this.searchTimeout = setTimeout(renderPlaces, 300);
-      });
-      
-      document.getElementById('districtFilter').addEventListener('change', renderPlaces);
-      document.getElementById('categoryFilter').addEventListener('change', renderPlaces);
-      document.getElementById('openOnlyCheck').addEventListener('change', renderPlaces);
-      document.getElementById('nearMeCheck').addEventListener('change', renderPlaces);
-
-      // Temizle butonu
-      document.getElementById('clearBtn').addEventListener('click', clearAllFilters);
-
-      // Enter tuşu ile işlemler
-      document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') checkPassword();
-      });
-
-      document.getElementById('chatMessageInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-          sendChatMessage();
+        if (name) {
+          hasData = true;
+          weekData[day] = { name, address, phone };
         }
       });
       
-      // Input validation listeners
-      const validationInputs = ['supportName', 'supportEmail', 'supportCategory', 'supportSubject', 'supportMessage'];
-      validationInputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        if (input) {
-          input.addEventListener('input', function() {
-            this.classList.remove('error-input');
-          });
-        }
-      });
-    });
-
-    // 🎯 Modal fonksiyonları
-    function openModal(id) {
-      document.getElementById(id).classList.add('show');
+      if (!hasData) {
+        showToast('En az bir eczane bilgisi girin!', 'error');
+        return;
+      }
+      
+      try {
+        weekData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('pharmacies').add(weekData);
+        showToast('Haftalık eczaneler kaydedildi!', 'success');
+        
+        // Clear form
+        document.getElementById('pharmacy-week-start').value = '';
+        days.forEach(day => {
+          document.getElementById(`pharmacy-${day}-name`).value = '';
+          document.getElementById(`pharmacy-${day}-address`).value = '';
+          document.getElementById(`pharmacy-${day}-phone`).value = '';
+        });
+        
+        loadAdminPharmaciesList();
+      } catch (error) {
+        console.error('Hata:', error);
+        showToast('Kaydedilemedi!', 'error');
+      }
     }
-
-    function closeModal(id) {
-      document.getElementById(id).classList.remove('show');
+    
+    async function deletePharmacyWeek(id) {
+      if (!confirm('Bu haftayı silmek istediğinizden emin misiniz?')) return;
+      try {
+        await db.collection('pharmacies').doc(id).delete();
+        showToast('Hafta silindi!', 'success');
+        loadAdminPharmaciesList();
+      } catch (error) {
+        console.error('Hata:', error);
+        showToast('Silinemedi!', 'error');
+      }
     }
-
-    // 📢 Toast sistemi
-    function showToast(msg, type = 'success') {
+    
+    async function deleteSupportTicket(id) {
+      if (!confirm('Bu talebi silmek istediğinizden emin misiniz?')) return;
+      try {
+        await db.collection('support').doc(id).delete();
+        showToast('Talep silindi!', 'success');
+        loadAdminSupportList();
+      } catch (error) {
+        console.error('Hata:', error);
+        showToast('Silinemedi!', 'error');
+      }
+    }
+    
+    // Backup
+    function exportBackup() {
+      const backup = {
+        places: allPlaces,
+        favorites: favorites,
+        exportDate: new Date().toISOString(),
+        version: '2.0'
+      };
+      const dataStr = JSON.stringify(backup, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lemmon-yedek-${new Date().getTime()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Yedek alındı!', 'success');
+    }
+    
+    function importBackup() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const backup = JSON.parse(text);
+          if (!backup.places || !Array.isArray(backup.places)) {
+            throw new Error('Geçersiz yedek');
+          }
+          if (confirm(`${backup.places.length} mekan geri yüklenecek. Onaylıyor musunuz?`)) {
+            // Firebase'e yükle
+            for (const place of backup.places) {
+              const { id, ...placeData } = place;
+              await db.collection('places').add(placeData);
+            }
+            
+            if (backup.favorites) {
+              favorites = backup.favorites;
+              saveFavoritesToStorage();
+            }
+            
+            showToast('Yedek yüklendi!', 'success');
+            await loadPlaces();
+          }
+        } catch (error) {
+          console.error('Hata:', error);
+          showToast('Yedek yüklenemedi!', 'error');
+        }
+      };
+      input.click();
+    }
+    
+    // Utility Functions
+    function getPlaceStatus(place) {
+      if (!place.openTime || !place.closeTime) return null;
+      
+      const now = new Date();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTime = currentHours * 60 + currentMinutes;
+      
+      const [openH, openM] = place.openTime.split(':').map(Number);
+      const [closeH, closeM] = place.closeTime.split(':').map(Number);
+      const openTime = openH * 60 + openM;
+      const closeTime = closeH * 60 + closeM;
+      
+      const isOpen = currentTime >= openTime && currentTime < closeTime;
+      
+      return isOpen 
+        ? { class: 'open', icon: '🟢', text: 'Açık' }
+        : { class: 'closed', icon: '🔴', text: 'Kapalı' };
+    }
+    
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function showEmptyState(message) {
+      const container = document.getElementById('main-content');
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🍋</div>
+          <div class="empty-state-text">${message}</div>
+        </div>
+      `;
+    }
+    
+    function showToast(message, type = 'success') {
       const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i><span>${msg}</span>`;
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
       document.body.appendChild(toast);
       
       setTimeout(() => toast.classList.add('show'), 100);
+      
       setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => {
-          if (document.body.contains(toast)) {
-            document.body.removeChild(toast);
-          }
-        }, 400);
+        setTimeout(() => toast.remove(), 400);
       }, 3000);
     }
-
-    // 🚀 Uygulama başlatma
-    async function initApp() {
-      console.log('🚀 LemmOn başlatılıyor...');
-      showToast('🔄 Uygulama başlatılıyor...', 'warning');
-      
-      await loadFromFirebase();
-      populateFilters();
-      renderPlaces();
-      
-      console.log('✅ Uygulama hazır - Tüm servisler aktif!');
-      showToast('✅ Tüm servisler aktif! Sesli arama, konum ve filtreler çalışıyor.');
-    }
-
-    // Global fonksiyonları tanımla
-    window.submitSupport = submitSupport;
-    window.addSampleData = addSampleData;
-    window.addPlace = addPlace;
-    window.deletePlace = deletePlace;
-    window.syncFirebaseData = syncFirebaseData;
-    window.loadSupportRequests = loadSupportRequests;
-    window.openSupportChat = openSupportChat;
-    window.sendChatMessage = sendChatMessage;
-    window.closeSupportRequest = closeSupportRequest;
-    window.toggleFavorite = toggleFavorite;
-    window.showFavorites = showFavorites;
-    window.showAbout = showAbout;
-    window.handleBrandClick = handleBrandClick;
-    window.handleLanguageChange = handleLanguageChange;
-    window.checkPassword = checkPassword;
-    window.openModal = openModal;
-    window.closeModal = closeModal;
-    window.showToast = showToast;
-    window.openGoogleMaps = openGoogleMaps;
-    window.clearAllFilters = clearAllFilters;
+    
+    // Modal close on backdrop click
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+    });
+    
+    console.log('🍋 LemmOn V2.0 hazır!');
   </script>
 </body>
 </html>
+
